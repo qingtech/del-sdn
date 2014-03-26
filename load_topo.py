@@ -5,14 +5,14 @@ import error
 frame = sys._getframe()
 filename = sys._getframe().f_code.co_filename
 name = sys._getframe().f_code.co_name
+not_arg_m = 'not argument'
+not_eno_m = 'not enough argument'
+ivl_arg_m = 'invalid argument'
 def load_topo():
 	#set controller number:gv.c_num
 	#set switch number:gv.s_num
 	#set link number:gv.l_num
 	#load network topology:
-	not_arg_m = 'not argument'
-	not_eno_m = 'not enough argument'
-	ivl_arg_m = 'invalid argument'
 	
 	f = open(gv.net_topo_file)
 	line = f.readline()
