@@ -11,7 +11,7 @@ def load_topo():
 	#set link number:gv.l_num
 	#load network topology:
 	not_arg_m = 'not argument'
-	not_eno_m = 'not enough arigument'
+	not_eno_m = 'not enough argument'
 	ivl_arg_m = 'invalid argument'
 	
 	f = open(gv.net_topo_file)
