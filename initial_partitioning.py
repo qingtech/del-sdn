@@ -13,21 +13,30 @@ ivl_arg_m = 'invalid argument'
 #复杂度：O(switch_number)
 def randomly_get_bipartition(s_wei, lc_part, rc_part):
 	sum_wei = 0
+	count = 100
 	for sw in s_wei:
 		sum_wei += sw
 	sn = len(s_wei)
 	partition = [0]*sn
 	lsw = 0
 	rsw = sum_wei
-	while abs(rsw-lsw) > sum_wei*0.4:
+	d = abs(rsw-lsw)
+	while abs(rsw-lsw) > sum_wei*0.1:
 		rsw = lsw = 0
+		tmp = [0]*sn
 		for i in range(sn):
 			if random.randint(0,1) == 0:
-				partition[i] = lc_part
+				tmp[i] = lc_part
 				lsw += s_wei[i]
 			else:
-				partition[i] = rc_part
+				tmp[i] = rc_part
 				rsw += s_wei[i]
+		if d > abs(rsw-lsw):
+			partition = tmp
+			d = abs(rsw-lsw)
+		count -= 1
+		if count <= 0:
+			break
 	return partition
 
 #index = [3,2,1,0]
