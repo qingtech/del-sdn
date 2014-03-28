@@ -10,6 +10,13 @@ not_arg_m = 'not argument'
 not_eno_m = 'not enough argument'
 ivl_arg_m = 'invalid argument'
 
+#功能：将父分区根据交换机权重划分为总权重大致相等的两个子分区
+#输入：
+#父分区交换机权重数组：s_wei[]
+#左子分区号：lc_part
+#右子分区号：rc_part
+#输出：
+#分区数组：partition[]
 #复杂度：O(switch_number)
 def randomly_get_bipartition(s_wei, lc_part, rc_part):
 	sum_wei = 0
@@ -21,6 +28,8 @@ def randomly_get_bipartition(s_wei, lc_part, rc_part):
 	lsw = 0
 	rsw = sum_wei
 	d = abs(rsw-lsw)
+	#左右分区交换机权重不超过总权重0.1%
+	#如果经过count仍找不到符合以上条件的左右分区，则取count中最佳
 	while abs(rsw-lsw) > sum_wei*0.1:
 		rsw = lsw = 0
 		tmp = [0]*sn
@@ -39,9 +48,6 @@ def randomly_get_bipartition(s_wei, lc_part, rc_part):
 			break
 	return partition
 
-#index = [3,2,1,0]
-#s_wei = [2,3,4,5]
-#weight[s0] = 5, weight[s1] = 4, weight[s2] = 3, weight[s3] = 2
 #设交换机数量为sn,则
 #s_wei[sn]代表各个交换机的权重
 #l_wei[sn][sn]代表链路权重
@@ -79,17 +85,18 @@ def initial_partition(s_wei,l_wei,level,part):
 	lc_part = part*2	 #left  child part
 	rc_part = part*2 + 1	 #right child part
 	edge_cut = sys.maxint
-	for i in range(1):
-		partition = randomly_get_bipartition(s_wei, lc_part, rc_part)
+	for i in range(5):
+		tmp_part = randomly_get_bipartition(s_wei, lc_part, rc_part)
 		#print 'partition.len=%d'%len(partition)
 		#微调左右partition
 		tmp = 0
 		for j in range(sn-1):
 			for k in range(j,sn):
-				if partition[j] != partition[k]:
+				if tmp_part[j] != tmp_part[k]:
 					tmp += l_wei[j][k]
 		if tmp < edge_cut:
 			edge_cut = tmp
+			partition = tmp_part
 		
 
 	#part 0 of bipartition
@@ -164,17 +171,21 @@ if __name__ == '__main__':
 	pn = gv.level**2
 	part = [0]*pn
 	sw   = [0]*pn
+	print 'switch weight'
 	for i in range(sn):
 		print '%2d '%s_wei[i],
 	print ''
+	print '交换机分区情况'
 	for i in range(sn):
 		part[partition[i]-pn] += 1
 		sw[partition[i]-pn] += s_wei[i]
 		print '%2d '%partition[i],
 	print ''
+	print '各个分区交换机数量'
 	for i in range(pn):
 		print '%2d '%part[i],
 	print ''
+	print '各个分区的交换机权重总和'
 	for i in range(pn):
 		print '%2d '%sw[i],
 	print ''
@@ -183,4 +194,4 @@ if __name__ == '__main__':
 		for j in range(i+1, sn):
 			if partition[i] != partition[j]:
 				edge_cut += l_wei[i][j]	
-	print '%d'%edge_cut
+	print '割边数量：%d'%edge_cut
