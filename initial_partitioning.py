@@ -3,6 +3,7 @@ import gv
 import sys
 import error
 import random
+import copy
 frame = sys._getframe()
 filename = sys._getframe().f_code.co_filename
 name = sys._getframe().f_code.co_name
@@ -20,6 +21,7 @@ ivl_arg_m = 'invalid argument'
 #复杂度：O(switch_number^2)
 def randomly_get_bipartition(s_wei, l_wei, lc_part_no, rc_part_no):
 	sum_wei = 0	#顶点总权重
+	sum_wei2 = 0	#因划分而产生的额外顶点权重（跨域流的中间路径建立请求）
 	count = 100	#寻找分区最大循环次数
 	for sw in s_wei:
 		sum_wei += sw
@@ -30,8 +32,9 @@ def randomly_get_bipartition(s_wei, l_wei, lc_part_no, rc_part_no):
 	d = abs(rsw-lsw)
 	#左右分区交换机权重不超过总权重0.1%
 	#如果经过count仍找不到符合以上条件的左右分区，则取count中最佳
-	while abs(rsw-lsw) > sum_wei*0.1:
+	while abs(rsw-lsw) > (sum_wei + sum_wei2)*0.1:
 		rsw = lsw = 0
+		sum_wei2 = 0
 		tmp = [0]*sn
 		for i in range(sn):
 			if random.randint(0,1) == 0:
@@ -49,16 +52,29 @@ def randomly_get_bipartition(s_wei, l_wei, lc_part_no, rc_part_no):
 					rsw += l_wei[i][j]
 					#i<————j
 					lsw += l_wei[j][i]
+					sum_wei2 += l_wei[i][j] + l_wei[j][i]
+				'''
 				else if tmp[i] == rc_part_no and tmp[j] == lc_part_no:
 					rsw += l_wei[i][j]
 					lsw += l_wei[j][i]
-				
+					sum_wei2 += l_wei[i][j] + l_wei[j][i]
+				'''	
 		if d > abs(rsw-lsw):
 			partition = tmp
 			d = abs(rsw-lsw)
 		count -= 1
 		if count <= 0:
 			break
+	for i in range(sn):
+		for j in range(sn):
+			if partition[i] == lc_part_no and partition[j] == rc_part_no:
+				s_wei[i] += l_wei[j][i]
+				s_wei[j] += l_wei[i][j]
+			'''
+			else if partition[i] == rc_part_no and partition[j] == lc_part_no:
+				s_wei[i] += l_wei[i][j]
+				s_wei[j] += l_wei[j][i]
+			'''
 	return partition
 
 #设交换机数量为sn,则
@@ -98,8 +114,12 @@ def initial_partition(s_wei,l_wei,level,part_no):
 	lc_part_no = part_no*2	 	#left  child part
 	rc_part_no = part_no*2 + 1	#right child part
 	edge_cut = sys.maxint
+	tmp_s_wei = []
 	for i in range(5):
-		tmp_part = randomly_get_bipartition(s_wei, l_wei, lc_part_no, rc_part_no)
+		tmp_s_wei = copy.copy(s_wei)
+		tmp_part = randomly_get_bipartition(tmp_s_wei, l_wei, lc_part_no, rc_part_no)
+		partition = tmp_part
+		continue
 		#print 'partition.len=%d'%len(partition)
 		#微调左右partition
 		tmp = 0
@@ -111,7 +131,9 @@ def initial_partition(s_wei,l_wei,level,part_no):
 			edge_cut = tmp
 			partition = tmp_part
 		
-
+	#update s_wei
+	for i in range(sn):
+		s_wei[i] = tmp_s_wei[i]
 	#part 0 of bipartition
 	#part 1 of bipartition
 	#统计左右分区交换机个数
@@ -171,15 +193,17 @@ def initial_partition(s_wei,l_wei,level,part_no):
 	for i in range(sn0):
 		#print 'i=%d,index_0[i]=%d'%(i,index_0[i])
 		partition[index_0[i]] = part_0[i]
+		s_wei[index_0[i]] = s_wei_0[i]
 	part_1 = initial_partition(s_wei_1,l_wei_1,level+1, rc_part_no)
 	for i in range(sn1):
 		partition[index_1[i]] = part_1[i]
+		s_wei[index_1[i]] = s_wei_1[i]
 	return partition
 if __name__ == '__main__':
 	sn = 16*1
 	#s_wei = [1]*sn
-	s_wei = [20,20,20,2,2,2,2,2,2,2,1,1,1,1,1,1]
-	l_wei = [[1,0,2,0,3,0,3,0,1,0,1,0,4,0,1,0]*1 for row in range(sn)]
+	s_wei =  [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+	l_wei = [[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1] for row in range(sn)]
 	partition = initial_partition( s_wei, l_wei, 0, 1)
 	pn = gv.level**2
 	part = [0]*pn
