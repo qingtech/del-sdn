@@ -17,8 +17,8 @@ ivl_arg_m = 'invalid argument'
 #右子分区号：rc_part_no
 #输出：
 #分区数组：partition[]
-#复杂度：O(switch_number)
-def randomly_get_bipartition(s_wei, lc_part_no, rc_part_no):
+#复杂度：O(switch_number^2)
+def randomly_get_bipartition(s_wei, l_wei, lc_part_no, rc_part_no):
 	sum_wei = 0	#顶点总权重
 	count = 100	#寻找分区最大循环次数
 	for sw in s_wei:
@@ -40,6 +40,19 @@ def randomly_get_bipartition(s_wei, lc_part_no, rc_part_no):
 			else:
 				tmp[i] = rc_part_no
 				rsw += s_wei[i]
+		#将因分区而新增的中间路径请求（跨域流）添加到lsw和rsw
+		for i in range(sn):
+			for j in range(sn):
+				if tmp[i] == lc_part_no and tmp[j] == rc_part_no:
+					#i(left)————j(right)
+					#i————>j
+					rsw += l_wei[i][j]
+					#i<————j
+					lsw += l_wei[j][i]
+				else if tmp[i] == rc_part_no and tmp[j] == lc_part_no:
+					rsw += l_wei[i][j]
+					lsw += l_wei[j][i]
+				
 		if d > abs(rsw-lsw):
 			partition = tmp
 			d = abs(rsw-lsw)
@@ -86,7 +99,7 @@ def initial_partition(s_wei,l_wei,level,part_no):
 	rc_part_no = part_no*2 + 1	#right child part
 	edge_cut = sys.maxint
 	for i in range(5):
-		tmp_part = randomly_get_bipartition(s_wei, lc_part_no, rc_part_no)
+		tmp_part = randomly_get_bipartition(s_wei, l_wei, lc_part_no, rc_part_no)
 		#print 'partition.len=%d'%len(partition)
 		#微调左右partition
 		tmp = 0
