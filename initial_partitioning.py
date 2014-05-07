@@ -1,5 +1,6 @@
 #encoding:utf-8
 import gv
+import load_topo
 import sys
 import error
 import random
@@ -116,7 +117,7 @@ def initial_partition(s_wei,l_wei,level,part_no):
 	edge_cut = sys.maxint
 	tmp_s_wei = []
 	for i in range(5):
-		tmp_s_wei = copy.copy(s_wei)
+		tmp_s_wei = copy.deepcopy(s_wei)
 		tmp_part = randomly_get_bipartition(tmp_s_wei, l_wei, lc_part_no, rc_part_no)
 		partition = tmp_part
 		break
@@ -200,12 +201,38 @@ def initial_partition(s_wei,l_wei,level,part_no):
 		s_wei[index_1[i]] = s_wei_1[i]
 	return partition
 if __name__ == '__main__':
-	sn = 16*1
-	#s_wei = [1]*sn
-	s_wei =  [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
-	l_wei = [[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1] for row in range(sn)]
+	#sn = 16*1
+	#s_wei =  [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+	#l_wei = [[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1] for row in range(sn)]
+	max = 1000000000
+	load_topo.load_topo()
+	sn = gv.s_num
+	s_wei = [1]*sn
+	l_wei = copy.deepcopy(gv.net_topo)
+	l_lan = copy.deepcopy(gv.net_topo)
+	for i in range(sn):
+		for j in range(sn):
+			if l_wei[i][j] == 0:
+				l_lan[i][j] = max
+	'''
+	print 'l_wei'
+	for i in range(sn):
+		for j in range(sn):
+			print '%d '%l_wei[i][j],
+		print ''
+	print 'l_lan'
+	for i in range(sn):
+		for j in range(sn):
+			print '%d '%l_lan[i][j],
+		print ''
+	print 'gv.net_topo'
+	for i in range(sn):
+		for j in range(sn):
+			print '%d '%gv.net_topo[i][j],
+		print ''
+	'''
 	partition = initial_partition( s_wei, l_wei, 0, 1)
-	pn = gv.level**2
+	pn = 2**gv.level
 	part = [0]*pn
 	sw   = [0]*pn
 	print 'switch weight'
@@ -227,8 +254,8 @@ if __name__ == '__main__':
 		print '%2d '%sw[i],
 	print ''
 	edge_cut = 0
-	for i in range(sn-1):
-		for j in range(i+1, sn):
+	for i in range(sn):
+		for j in range(sn):
 			if partition[i] != partition[j]:
 				edge_cut += l_wei[i][j]	
 	print '割边数量：%d'%edge_cut
