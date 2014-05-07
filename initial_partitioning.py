@@ -119,7 +119,7 @@ def initial_partition(s_wei,l_wei,level,part_no):
 		tmp_s_wei = copy.copy(s_wei)
 		tmp_part = randomly_get_bipartition(tmp_s_wei, l_wei, lc_part_no, rc_part_no)
 		partition = tmp_part
-		continue
+		break
 		#print 'partition.len=%d'%len(partition)
 		#微调左右partition
 		tmp = 0
