@@ -114,18 +114,20 @@ def kernighan_lin_algorithm(s_wei, l_wei, part):
 		for j in xrange(i, sn):
 			if part[i] != part[j]:
 				edge_cut += l_wei[i][j] + l_wei[j][i]
-	sw_0 = 0
-	sw_1 = 0
+	sum_sw_0 = 0
+	sum_sw_1 = 0
+	#初始路径建立请求
 	for i in xrange(sn):
 		if part[i] == part_no_0:
-			sw_0 += s_wei[i]
+			sum_sw_0 += s_wei[i]
 		else:
-			sw_1 += s_wei[i]
+			sum_sw_1 += s_wei[i]
+	#中间路径建立请求
 	for i in xrange(sn):
 		for j in xrange(sn):
 			if part[i] == part_no_0 and part[j] != part[i]:
-				sw_1 += l_wei[i][j]
-				sw_0 += l_wei[j][i]
+				sum_sw_1 += l_wei[i][j]
+				sum_sw_0 += l_wei[j][i]
 	
 
 #设交换机数量为sn,则
