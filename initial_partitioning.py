@@ -5,6 +5,7 @@ import sys
 import error
 import random
 import copy
+from my_priority_queue import MyPriorityQueue
 frame = sys._getframe()
 filename = sys._getframe().f_code.co_filename
 name = sys._getframe().f_code.co_name
@@ -77,6 +78,55 @@ def randomly_get_bipartition(s_wei, l_wei, lc_part_no, rc_part_no):
 				s_wei[j] += l_wei[j][i]
 			'''
 	return partition
+#功能：根据随机划分好的两个分区，通过Kernighan-Lin算法对其进行调整，使得edge-cut达到最少
+#输入：交换机权重s_wei[]，链路权重l_wei[][]，划分数组part[]
+def kernighan_lin_algorithm(s_wei, l_wei, part):
+	sn = len(s_wei)
+	#数据合法性检验
+	if sn < 0:
+		error.report(filename, name, frame.f_lineno, ivl_arg_m)
+	if len(l_wei) != sn:
+		error.report(filename, name, frame.f_lineno, ivl_arg_m)
+	for i in range(sn):
+		if len(l_wei[i]) != sn:
+			error.report(filename, name, frame.f_lineno, ivl_arg_m)
+	if len(part) != sn:
+		error.report(filename, name, frame.f_lineno, ivl_arg_m)
+	#算法开始	
+	part_no_0 = part[0]
+	gain = [0]*sn
+	ec = [0]*sn
+	for i in xrange(sn):
+		for j in xrange(sn):
+			if part[i] == part[j]:
+				gain[i] -= l_wei[i][j] + l_wei[j][i]
+			else:
+				gain[i] += l_wei[i][j] + l_wei[j][i]
+	pq0 = MyPriorityQueue()
+	pq1 = MyPriorityQueue()
+	for i in xrange(sn):
+		if part[i] == part_no_0:
+			pq0.put(gain[i],i)
+		else:
+			pq1.put(gain[i],i)
+	edge_cut = 0
+	for i in xrange(sn - 1):
+		for j in xrange(i, sn):
+			if part[i] != part[j]:
+				edge_cut += l_wei[i][j] + l_wei[j][i]
+	sw_0 = 0
+	sw_1 = 0
+	for i in xrange(sn):
+		if part[i] == part_no_0:
+			sw_0 += s_wei[i]
+		else:
+			sw_1 += s_wei[i]
+	for i in xrange(sn):
+		for j in xrange(sn):
+			if part[i] == part_no_0 and part[j] != part[i]:
+				sw_1 += l_wei[i][j]
+				sw_0 += l_wei[j][i]
+	
 
 #设交换机数量为sn,则
 #s_wei[sn]代表各个交换机的权重
@@ -123,9 +173,10 @@ def initial_partition(s_wei,l_wei,level,part_no):
 		break
 		#print 'partition.len=%d'%len(partition)
 		#微调左右partition
+		kernighan_lin_algorithm(tmp_s_wei, l_wei, tmp_part)
 		tmp = 0
-		for j in range(sn-1):
-			for k in range(j,sn):
+		for j in range(sn):
+			for k in range(sn):
 				if tmp_part[j] != tmp_part[k]:
 					tmp += l_wei[j][k]
 		if tmp < edge_cut:
