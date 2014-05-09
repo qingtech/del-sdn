@@ -13,6 +13,7 @@ class MyPriorityQueue(object):
 	def put(self, pri, ele):
 		if self.size >= self.max_size:
 			print 'queue is full'
+			return
 		self.queue[self.size] = ele	
 		self.priority[self.size] = pri
 		i = self.size
@@ -73,12 +74,16 @@ class MyPriorityQueue(object):
 		self.size -= 1
 		return res
 if __name__ == '__main__':
+	pq = MyPriorityQueue(-12)
 	pq = MyPriorityQueue(3)
+	print 'pq.empty():%d'%pq.empty()
 	pq.put(4,8)
 	pq.put(3,6)
 	pq.put(5,10)
+	pq.put(-1,-1)
 	print 'pq.size = %d'%pq.size
-	pq.update(12,8)
+	print 'pq.empty():%d'%pq.empty()
+	#pq.update(12,8)
 	for i in xrange(pq.size):
 		print '%d '%pq.get(),
 	print ''

@@ -18,7 +18,7 @@ ivl_arg_m = 'invalid argument'
 #l_wei: 链路权重
 #输出：
 #s_wei2: 中间路径建立请求
-def get_s_wei_2(s_wei, l_wei, part, lc_part_no, rc_part_no):
+def get_s_wei_2(s_wei, l_wei, part):
 	sn = len(s_wei)
 	#数据合法性检验
 	if sn < 0:
@@ -32,9 +32,9 @@ def get_s_wei_2(s_wei, l_wei, part, lc_part_no, rc_part_no):
 		error.report(filename, name, frame.f_lineno, ivl_arg_m)
 	#算法开始
 	s_wei_2 = [0]*sn
-	for i in range(sn):
-		for j in range(sn):
-			if part[i] == lc_part_no and part[j] == rc_part_no:
+	for i in range(sn-1):
+		for j in range(i,sn):
+			if part[i] != part[j]:
 				s_wei_2[i] += l_wei[j][i]
 				s_wei_2[j] += l_wei[i][j]
 	return s_wei_2
@@ -58,7 +58,7 @@ def randomly_get_bipartition(s_wei, l_wei, lc_part_no, rc_part_no):
 	d = abs(rsw-lsw)
 	#左右分区交换机权重不超过总权重0.1%
 	#如果经过count仍找不到符合以上条件的左右分区，则取count中最佳
-	while abs(rsw-lsw) > (rsw + lsw)0.1:
+	while abs(rsw-lsw) > (rsw + lsw)*0.1:
 		rsw = lsw = 0
 		tmp = [0]*sn
 		#将初始路径请求（域内流）添加到lsw和rsw
@@ -70,7 +70,7 @@ def randomly_get_bipartition(s_wei, l_wei, lc_part_no, rc_part_no):
 				tmp[i] = rc_part_no
 				rsw += s_wei[i]
 		#将中间路径请求（跨域流）添加到lsw和rsw
-		s_wei_2 = get_s_wei_2(s_wei, l_wei, part, lc_part_no, rc_part_no)
+		s_wei_2 = get_s_wei_2(s_wei, l_wei, part)
 		for i in range(sn):
 			if tmp[i] == lc_part_no:
 				rsw += s_wei_2[i]
@@ -83,7 +83,7 @@ def randomly_get_bipartition(s_wei, l_wei, lc_part_no, rc_part_no):
 		count -= 1
 		if count <= 0:
 			break
-	return partition
+	return part
 #功能：根据随机划分好的两个分区，通过Kernighan-Lin算法对其进行调整，使得edge-cut达到最少
 #输入：交换机权重s_wei[]，链路权重l_wei[][]，划分数组part[]
 def kernighan_lin_algorithm(s_wei, l_wei, part, lc_part_no, rc_part_no):
@@ -110,23 +110,17 @@ def kernighan_lin_algorithm(s_wei, l_wei, part, lc_part_no, rc_part_no):
 				gain[i] -= l_wei[i][j] + l_wei[j][i]
 			else:
 				gain[i] += l_wei[i][j] + l_wei[j][i]
-	pq0 = MyPriorityQueue()
-	pq1 = MyPriorityQueue()
+	pq0 = MyPriorityQueue(sn)
+	pq1 = MyPriorityQueue(sn)
 	#初始化两个优先队列
 	for i in xrange(sn):
 		if part[i] == lc_part_no:
 			pq0.put(gain[i],i)
 		else:
 			pq1.put(gain[i],i)
-	edge_cut = 0
-	#计算当前edge_cut
-	for i in xrange(sn - 1):
-		for j in xrange(i, sn):
-			if part[i] != part[j]:
-				edge_cut += l_wei[i][j] + l_wei[j][i]
 	lc_sum_sw = 0
 	rc_sum_sw = 0
-	s_wei_2 = get_s_wei_2(s_wei, l_wei, part, lc_part_no, rc_part_no)
+	s_wei_2 = get_s_wei_2(s_wei, l_wei, part)
 	#初始路径&中间路径建立请求
 	for i in xrange(sn):
 		if part[i] == lc_part_no:
@@ -134,6 +128,16 @@ def kernighan_lin_algorithm(s_wei, l_wei, part, lc_part_no, rc_part_no):
 			lc_sum_sw += s_wei[i] + s_wei_2[i]
 		else:
 			rc_sum_sw += s_wei[i] + s_wei_2[i]
+	edge_cut = 0
+	#计算当前edge_cut
+	'''
+	for i in xrange(sn - 1):
+		for j in xrange(i, sn):
+			if part[i] != part[j]:
+				edge_cut += l_wei[i][j] + l_wei[j][i]
+	'''
+	for i in range(sn):
+		edge_cut += s_wei_2[i]
 	#根据两个优先队列，遍历每个节点
 	for i in xrange(sn):
 		index = -1
@@ -144,30 +148,47 @@ def kernighan_lin_algorithm(s_wei, l_wei, part, lc_part_no, rc_part_no):
 		else:	
 			if pq1.empty():
 				break
-			index = pq0.get()
+			index = pq1.get()
+		print 'i=%d, index=%d'%(i,index)
 		ec[i] = edge_cut - gain[index]
 		edge_cut = ec[i]
 		shift[i] = index
-		s_wei_2[index] = 0
 		#重新调整与交换机index相邻的交换机的gain
 		for j in xrange(sn):
 			if part[index] == lc_part_no:
 				lc_sum_sw -= s_wei[index]
 				rc_sum_sw += s_wei[index]
-				if part[j] = lc_part_no:
+
+				if part[j] == lc_part_no:
+					s_wei_2[index] += l_wei[j][index]
+					s_wei_2[j] += l_wei[index][j]
+					rc_sum_sw += l_wei[j][index]
 					lc_sum_sw += l_wei[index][j]
 					gain[j] += (l_wei[index][j] + l_wei[j][index])
 					pq0.update(gain[j], j)
 				else:
+					s_wei_2[index] -= l_wei[j][index]
+					s_wei_2[j] -= l_wei[index][j]
+					rc_sum_sw -= l_wei[j][index]
+					lc_sum_sw -= l_wei[index][j]
 					gain[j] -= (l_wei[index][j] + l_wei[j][index])
 					pq1.update(gain[j], j)
 			else:
 				lc_sum_sw += s_wei[index]
 				rc_sum_sw -= s_wei[index]
-				if part[j] = lc_part_no:
+
+				if part[j] == lc_part_no:
+					s_wei_2[index] -= l_wei[j][index]
+					s_wei_2[j] -= l_wei[index][j]
+					rc_sum_sw -= l_wei[j][index]
+					lc_sum_sw -= l_wei[index][j]
 					gain[j] -= (l_wei[index][j] + l_wei[j][index])
 					pq0.update(gain[j], j)
 				else:
+					s_wei_2[index] += l_wei[j][index]
+					s_wei_2[j] += l_wei[index][j]
+					lc_sum_sw += l_wei[j][index]
+					rc_sum_sw += l_wei[index][j]
 					gain[j] += (l_wei[index][j] + l_wei[j][index])
 					pq1.update(gain[j], j)
 		#调整交换机 index
@@ -192,6 +213,7 @@ def kernighan_lin_algorithm(s_wei, l_wei, part, lc_part_no, rc_part_no):
 			part[j] = rc_part_no
 		else:
 			part[j] = lc_part_no
+
 #设交换机数量为sn,则
 #s_wei[sn]代表各个交换机的权重
 #l_wei[sn][sn]代表链路权重
@@ -228,28 +250,25 @@ def initial_partition(s_wei,l_wei,level,part_no):
 	#8 9 10 11 12 13 14 15
 	lc_part_no = part_no*2	 	#left  child part
 	rc_part_no = part_no*2 + 1	#right child part
+	s_wei_2 = [0]*sn
 	edge_cut = sys.maxint
-	tmp_s_wei = []
 	for i in range(5):
-		tmp_s_wei = copy.deepcopy(s_wei)
-		tmp_part = randomly_get_bipartition(tmp_s_wei, l_wei, lc_part_no, rc_part_no)
-		partition = tmp_part
-		break
+		s_wei = copy.deepcopy(s_wei)
+		tmp_part = randomly_get_bipartition(s_wei, l_wei, lc_part_no, rc_part_no)
+		#partition = tmp_part
+		#break
 		#print 'partition.len=%d'%len(partition)
 		#微调左右partition
-		kernighan_lin_algorithm(tmp_s_wei, l_wei, tmp_part, lc_part_no, rc_part_no)
-		tmp = 0
-		for j in range(sn):
-			for k in range(sn):
-				if tmp_part[j] != tmp_part[k]:
-					tmp += l_wei[j][k]
-		if tmp < edge_cut:
-			edge_cut = tmp
+		kernighan_lin_algorithm(s_wei, l_wei, tmp_part, lc_part_no, rc_part_no)
+		tmp_edge_cut = 0
+		tmp_s_wei_2 = get_s_wei_2(s_wei, l_wei, tmp_part)
+		for i in range(sn):
+			tmp_edge_cut += tmp_s_wei_2[i]
+		if tmp_edge_cut < edge_cut:
+			edge_cut = tmp_edge_cut
+			s_wei_2 = tmp_s_wei_2
 			partition = tmp_part
 		
-	#update s_wei
-	for i in range(sn):
-		s_wei[i] = tmp_s_wei[i]
 	#part 0 of bipartition
 	#part 1 of bipartition
 	#统计左右分区交换机个数
@@ -273,11 +292,11 @@ def initial_partition(s_wei,l_wei,level,part_no):
 	for i in range(sn):
 		if partition[i] == lc_part_no:
 			index_0[i0] = i
-			s_wei_0[i0] = s_wei[i]
+			s_wei_0[i0] = s_wei[i] + s_wei_2[i]
 			i0 += 1
 		else:# if partition[i] == rc_part_no:
 			index_1[i1] = i
-			s_wei_1[i1] = s_wei[i]
+			s_wei_1[i1] = s_wei[i] + s_wei_2[i]
 			i1 += 1
 	#复杂度：O(switch_number^2)
 	#l_wei_0
@@ -346,31 +365,30 @@ if __name__ == '__main__':
 			print '%d '%gv.net_topo[i][j],
 		print ''
 	'''
-	partition = initial_partition( s_wei, l_wei, 0, 1)
+	partition = initial_partition(s_wei, l_wei, 0, 1)
 	pn = 2**gv.level
-	part = [0]*pn
-	sw   = [0]*pn
+	part_s_num = [0]*pn
+	part_s_wei   = [0]*pn
+	s_wei_2 = get_s_wei_2(s_wei, l_wei, partition)
 	print 'switch weight'
 	for i in range(sn):
 		print '%2d '%s_wei[i],
 	print ''
 	print '交换机分区情况'
 	for i in range(sn):
-		part[partition[i]-pn] += 1
-		sw[partition[i]-pn] += s_wei[i]
+		part_s_num[partition[i]-pn] += 1
+		part_s_wei[partition[i]-pn] += s_wei[i] + s_wei_2[i]
 		print '%2d '%partition[i],
 	print ''
 	print '各个分区交换机数量'
 	for i in range(pn):
-		print '%2d '%part[i],
+		print '%2d '%part_s_num[i],
 	print ''
 	print '各个分区的交换机权重总和'
 	for i in range(pn):
-		print '%2d '%sw[i],
+		print '%2d '%part_s_wei[i],
 	print ''
 	edge_cut = 0
 	for i in range(sn):
-		for j in range(sn):
-			if partition[i] != partition[j]:
-				edge_cut += l_wei[i][j]	
+		edge_cut += s_wei_2[i]
 	print '割边数量：%d'%edge_cut
