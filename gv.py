@@ -3,7 +3,7 @@
 #net_topo_file = 'net_topo.txt'
 net_topo_file = 'os3e.txt'
 topo_wei_file = 'topo_wei.txt'
-level = 2	#划分区域个数为2^level个,inital_partitioning.py使用该变量
+level = 1	#划分区域个数为2^level个,inital_partitioning.py使用该变量
 c_num = 4	#controller number
 s_num = 10	#switch number
 l_num = 120	#link number
