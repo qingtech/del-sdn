@@ -8,6 +8,8 @@ class MyPriorityQueue(object):
 		self.queue = [0]*max_size
 		self.priority = [0]*max_size
 		self.size = 0
+	def empty(self):
+		return self.size <= 0
 	def put(self, pri, ele):
 		if self.size >= self.max_size:
 			print 'queue is full'
