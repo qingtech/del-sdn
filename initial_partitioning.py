@@ -178,10 +178,12 @@ def kernighan_lin_algorithm(s_wei, l_wei, part, lc_part_no, rc_part_no):
 	tmp_edge_cut = edge_cut
 	for i in xrange(sn):
 		index = -1
+		'''
 		if debug:
 			print 'lc_sum_sw = %3d, rc_sum_sw = %3d'%(lc_sum_sw, rc_sum_sw)
 			#print 'lc_sw_1 = %3d, rc_sw_1 = %3d'%(lc_sw_1, rc_sw_1)
 			#print 'lc_sw_2 = %3d, rc_sw_2 = %3d'%(lc_sw_2, rc_sw_2)
+		'''
 		if lc_sum_sw > rc_sum_sw:
 			if pq0.empty():
 				break	
@@ -190,11 +192,13 @@ def kernighan_lin_algorithm(s_wei, l_wei, part, lc_part_no, rc_part_no):
 			if pq1.empty():
 				break
 			index = pq1.get()
+		'''
 		if debug:
 			if part[index] == lc_part_no:
 				print 'part[%2d] = %d = lc_part_no'%(index,part[index])
 			else:
 				print 'part[%2d] = %d = rc_part_no'%(index,part[index])
+		'''
 		ec[i] = tmp_edge_cut - gain[index]
 		tmp_edge_cut = ec[i]
 		shift[i] = index
