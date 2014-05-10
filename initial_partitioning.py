@@ -12,7 +12,7 @@ name = sys._getframe().f_code.co_name
 not_arg_m = 'not argument'
 not_eno_m = 'not enough argument'
 ivl_arg_m = 'invalid argument'
-debug = False
+debug = True
 #功能：根据链路权重l_wei将中间路径建立请求添加到s_wei
 #输入：
 #s_wei：初始路径建立请求
@@ -180,8 +180,8 @@ def kernighan_lin_algorithm(s_wei, l_wei, part, lc_part_no, rc_part_no):
 		index = -1
 		if debug:
 			print 'lc_sum_sw = %3d, rc_sum_sw = %3d'%(lc_sum_sw, rc_sum_sw)
-			print 'lc_sw_1 = %3d, rc_sw_1 = %3d'%(lc_sw_1, rc_sw_1)
-			print 'lc_sw_2 = %3d, rc_sw_2 = %3d'%(lc_sw_2, rc_sw_2)
+			#print 'lc_sw_1 = %3d, rc_sw_1 = %3d'%(lc_sw_1, rc_sw_1)
+			#print 'lc_sw_2 = %3d, rc_sw_2 = %3d'%(lc_sw_2, rc_sw_2)
 		if lc_sum_sw > rc_sum_sw:
 			if pq0.empty():
 				break	
@@ -334,6 +334,19 @@ def initial_partition(s_wei,l_wei,level,part_no):
 		if len(l_wei[i]) != sn:
 			error.report(filename, name, frame.f_lineno, ivl_arg_m)
 	part = [part_no]*sn
+	'''
+	###############
+	print '----------------l_wei-----------------------'
+	for i in xrange(sn):
+		print '%2d '%i,
+	print ''
+	print '--------------------------------------------'
+	for i in xrange(sn):
+		for j in xrange(sn):
+			print '%2d '%l_wei[i][j],
+		print ''
+	###############
+	'''
 	#最后一层，无需再划分
 	if level == gv.level:
 		return part
@@ -392,8 +405,12 @@ def initial_partition(s_wei,l_wei,level,part_no):
 	rc_index = [0]*rc_s_num
 	lc_s_wei = [0]*lc_s_num
 	rc_s_wei = [0]*rc_s_num
-	lc_l_wei = [[0]*lc_s_num]*lc_s_num
-	rc_l_wei = [[0]*rc_s_num]*rc_s_num
+	lc_l_wei = [[0 for col in range(lc_s_num)] for row in range(lc_s_num)]
+	rc_l_wei = [[0 for col in range(rc_s_num)] for row in range(rc_s_num)]
+	'''
+	what a f*cking bug 囧。。。。。
+	#rc_l_wei = [[0]*rc_s_num]*rc_s_num
+	'''
 	#index,s_wei
 	i0 = 0
 	i1 = 0
@@ -408,18 +425,12 @@ def initial_partition(s_wei,l_wei,level,part_no):
 			i1 += 1
 	#复杂度：O(switch_number^2)
 	#lc_l_wei
-	ii = 0
-	#print 'lc_s_num=%d,rc_s_num=%d'%(lc_s_num,rc_s_num)
-	for i in range(sn):
-		if part[i] == lc_part_no:
-			#print 'ii=%d'%ii
-			jj = 0
-			for j in range(sn):
-				if part[j] == lc_part_no:
-					lc_l_wei[ii][jj] = l_wei[i][j]
-					#print '%d '%jj
-					jj += 1
-			ii += 1	
+	for i in xrange(lc_s_num):
+		ii = lc_index[i]
+		for j in xrange(lc_s_num):
+			jj = lc_index[j]
+			lc_l_wei[i][j] = l_wei[ii][jj]
+	'''
 	#################
 	flag = False
 	print 'lc_l_wei'
@@ -433,17 +444,14 @@ def initial_partition(s_wei,l_wei,level,part_no):
 			flag = lc_l_wei[i][j] - lc_l_wei[j][i]
 		print ''
 	#################
-
+	'''
 	#rc_l_wei
-	ii = 0
-	for i in range(sn):
-		if part[i] == rc_part_no:
-			jj = 0	
-			for j in range(sn):
-				if part[j] == rc_part_no:
-					rc_l_wei[ii][jj] = l_wei[i][j]
-					jj += 1
-			ii += 1	
+	for i in xrange(rc_s_num):
+		ii = rc_index[i]
+		for j in xrange(rc_s_num):
+			jj = rc_index[j]
+			rc_l_wei[i][j] = l_wei[ii][jj]
+	'''
 	########################
 	flag = False	
 	print 'rc_l_wei'
@@ -457,6 +465,7 @@ def initial_partition(s_wei,l_wei,level,part_no):
 			flag = rc_l_wei[i][j] - rc_l_wei[j][i]
 		print ''
 	########################
+	'''
 	part_0 = initial_partition(lc_s_wei,lc_l_wei,level+1, lc_part_no)
 	#print 'part.len=%d,part_0.len=%d'%(len(part),len(part_0))
 	for i in range(lc_s_num):
@@ -481,15 +490,6 @@ if __name__ == '__main__':
 		for j in range(sn):
 			if l_wei[i][j] == 0:
 				l_lan[i][j] = max
-	#############
-	for i in range(sn):
-		print '%2d '%i,
-	print ''
-	for i in range(sn):
-		for j in xrange(sn):
-			print '%2d '%(l_wei[i][j]),
-		print ''
-	#############
 	'''
 	print 'l_wei'
 	for i in range(sn):
