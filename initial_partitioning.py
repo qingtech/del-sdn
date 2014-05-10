@@ -13,6 +13,12 @@ not_arg_m = 'not argument'
 not_eno_m = 'not enough argument'
 ivl_arg_m = 'invalid argument'
 debug = True
+#功能：得到左右分区权重差因子
+#输入：左分区交换机总权重lc_sum_sw，右分区交换机总权重rc_sum_sw
+#输出：
+#左右分区权重差因子
+def get_partition_factor(lc_sum_sw, rc_sum_sw):
+	return abs(lc_sum_sw - rc_sum_sw)*1.0/(lc_sum_sw + rc_sum_sw)
 #功能：根据链路权重l_wei将中间路径建立请求添加到s_wei
 #输入：
 #s_wei：初始路径建立请求
@@ -178,12 +184,13 @@ def kernighan_lin_algorithm(s_wei, l_wei, part, lc_part_no, rc_part_no):
 	tmp_edge_cut = edge_cut
 	for i in xrange(sn):
 		index = -1
-		'''
 		if debug:
 			print 'lc_sum_sw = %3d, rc_sum_sw = %3d'%(lc_sum_sw, rc_sum_sw)
-			#print 'lc_sw_1 = %3d, rc_sw_1 = %3d'%(lc_sw_1, rc_sw_1)
-			#print 'lc_sw_2 = %3d, rc_sw_2 = %3d'%(lc_sw_2, rc_sw_2)
-		'''
+			print 'lc_sw_1 = %3d, rc_sw_1 = %3d'%(lc_sw_1, rc_sw_1)
+			print 'lc_sw_2 = %3d, rc_sw_2 = %3d'%(lc_sw_2, rc_sw_2)
+			if lc_sw_2 < 0 or rc_sw_2 < 0:
+				print 'error!!!!!!!'
+				content = raw_input('error')
 		if lc_sum_sw > rc_sum_sw:
 			if pq0.empty():
 				break	
@@ -192,13 +199,39 @@ def kernighan_lin_algorithm(s_wei, l_wei, part, lc_part_no, rc_part_no):
 			if pq1.empty():
 				break
 			index = pq1.get()
-		'''
 		if debug:
 			if part[index] == lc_part_no:
 				print 'part[%2d] = %d = lc_part_no'%(index,part[index])
 			else:
 				print 'part[%2d] = %d = rc_part_no'%(index,part[index])
-		'''
+		#检查转移交换机index是否会使两个分区的交换机权重更加不平衡
+		tmp_lc_sum_sw = lc_sum_sw
+		tmp_rc_sum_sw = rc_sum_sw
+		if part[index] == lc_part_no:
+			tmp_lc_sum_sw -= s_wei[index]
+			tmp_rc_sum_sw += s_wei[index]
+			for j in xrange(sn):
+				if part[j] == lc_part_no:
+					tmp_lc_sum_sw += l_wei[index][j]
+					tmp_rc_sum_sw += l_wei[j][index]
+				else:
+					tmp_lc_sum_sw -= l_wei[j][index]
+					tmp_rc_sum_sw -= l_wei[index][j]
+		else:
+			tmp_lc_sum_sw += s_wei[index]
+			tmp_rc_sum_sw -= s_wei[index]
+			for j in xrange(sn):
+				if part[j] == lc_part_no:
+					tmp_lc_sum_sw -= l_wei[index][j]
+					tmp_rc_sum_sw -= l_wei[j][index]
+				else:
+					tmp_lc_sum_sw += l_wei[j][index]
+					tmp_rc_sum_sw += l_wei[index][j]
+		if debug:
+			if get_partition_factor(tmp_lc_sum_sw, tmp_rc_sum_sw) > 0.2 :
+				print 'tmp_lc_sum_sw = %d, tmp_rc_sum_sw = %d'%(tmp_lc_sum_sw, tmp_rc_sum_sw)
+				print 'lc_sum_sw = %d, rc_sum_sw = %d'%(lc_sum_sw, rc_sum_sw)
+				content = raw_input('got bad partition factor if shift')
 		ec[i] = tmp_edge_cut - gain[index]
 		tmp_edge_cut = ec[i]
 		shift[i] = index
@@ -237,11 +270,16 @@ def kernighan_lin_algorithm(s_wei, l_wei, part, lc_part_no, rc_part_no):
 				else:
 					s_wei_2[index] -= l_wei[j][index]
 					s_wei_2[j] -= l_wei[index][j]
+					'''
+					fixed bug
 					rc_sum_sw -= l_wei[j][index]
 					lc_sum_sw -= l_wei[index][j]
+					'''
+					lc_sum_sw -= l_wei[j][index]
+					rc_sum_sw -= l_wei[index][j]
 					########################
-					rc_sw_2 -= l_wei[j][index]
-					lc_sw_2 -= l_wei[index][j]
+					lc_sw_2 -= l_wei[j][index]
+					rc_sw_2 -= l_wei[index][j]
 					########################
 					gain[j] -= (l_wei[index][j] + l_wei[j][index])*2
 					if not check[j]:
@@ -250,11 +288,16 @@ def kernighan_lin_algorithm(s_wei, l_wei, part, lc_part_no, rc_part_no):
 				if part[j] == lc_part_no:
 					s_wei_2[index] -= l_wei[j][index]
 					s_wei_2[j] -= l_wei[index][j]
+					'''
+					fixed bug
+					lc_sum_sw -= l_wei[j][index]
+					rc_sum_sw -= l_wei[index][j]
+					'''
 					rc_sum_sw -= l_wei[j][index]
 					lc_sum_sw -= l_wei[index][j]
 					########################
-					lc_sw_2 -= l_wei[j][index]
-					rc_sw_2 -= l_wei[index][j]
+					rc_sw_2 -= l_wei[j][index]
+					lc_sw_2 -= l_wei[index][j]
 					########################
 					gain[j] -= (l_wei[index][j] + l_wei[j][index])*2
 					if not check[j]:
@@ -409,11 +452,14 @@ def initial_partition(s_wei,l_wei,level,part_no):
 	rc_index = [0]*rc_s_num
 	lc_s_wei = [0]*lc_s_num
 	rc_s_wei = [0]*rc_s_num
-	lc_l_wei = [[0 for col in range(lc_s_num)] for row in range(lc_s_num)]
-	rc_l_wei = [[0 for col in range(rc_s_num)] for row in range(rc_s_num)]
+	#lc_l_wei = [[0 for col in range(lc_s_num)] for row in range(lc_s_num)]
+	#rc_l_wei = [[0 for col in range(rc_s_num)] for row in range(rc_s_num)]
+	lc_l_wei = [[0]*lc_s_num]*lc_s_num
+	rc_l_wei = [[0]*rc_s_num]*rc_s_num
 	'''
 	what a f*cking bug 囧。。。。。
-	#rc_l_wei = [[0]*rc_s_num]*rc_s_num
+	lc_l_wei = [[0]*lc_s_num]*lc_s_num
+	rc_l_wei = [[0]*rc_s_num]*rc_s_num
 	'''
 	#index,s_wei
 	i0 = 0
