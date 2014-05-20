@@ -60,6 +60,24 @@ def get_sum_s_wei_by_part(s_wei, part, part_no):
 		if part[i] == part_no:
 			sum += s_wei[i]
 	return sum
+#功能求出交换机index从from_part_no转移到to_part_no后的gain
+def get_gain(index, from_part_no, to_part_no, part, s_wei, l_wei)
+	#检查转移交换机index是否会使两个分区的交换机权重更加不平衡
+	#暂时将交换机index转移到另一个分区
+	if part[index] == lc_part_no:
+		part[index] = rc_part_no
+	else:
+		part[index] = lc_part_no
+
+	tmp_s_wei_2 = get_s_wei_2(s_wei, l_wei, part)
+	tmp_lc_sum_sw = get_sum_s_wei_by_part(s_wei, part, lc_part_no) + get_sum_s_wei_by_part(tmp_s_wei_2, part, lc_part_no)
+	tmp_rc_sum_sw = get_sum_s_wei_by_part(s_wei, part, rc_part_no) + get_sum_s_wei_by_part(tmp_s_wei_2, part, rc_part_no)
+	#将交换机index转回到原分区
+	if part[index] == lc_part_no:
+		part[index] = rc_part_no
+	else:
+		part[index] = lc_part_no
+	#########################################################
 #功能：将父分区根据交换机权重划分为总权重大致相等的两个子分区
 #输入：
 #父分区交换机权重数组：s_wei[]
@@ -217,15 +235,16 @@ def kernighan_lin_algorithm(s_wei, l_wei, part, lc_part_no, rc_part_no):
 			else:
 				print 'part[%2d] = %d = rc_part_no'%(index,part[index])
 		#检查转移交换机index是否会使两个分区的交换机权重更加不平衡
+		#暂时将交换机index转移到另一个分区
 		if part[index] == lc_part_no:
 			part[index] = rc_part_no
 		else:
 			part[index] = lc_part_no
+
 		tmp_s_wei_2 = get_s_wei_2(s_wei, l_wei, part)
 		tmp_lc_sum_sw = get_sum_s_wei_by_part(s_wei, part, lc_part_no) + get_sum_s_wei_by_part(tmp_s_wei_2, part, lc_part_no)
 		tmp_rc_sum_sw = get_sum_s_wei_by_part(s_wei, part, rc_part_no) + get_sum_s_wei_by_part(tmp_s_wei_2, part, rc_part_no)
-		tmp_lc_sum_sw = lc_sum_sw
-		tmp_rc_sum_sw = rc_sum_sw
+		#将交换机index转回到原分区
 		if part[index] == lc_part_no:
 			part[index] = rc_part_no
 		else:
