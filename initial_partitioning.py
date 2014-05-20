@@ -12,7 +12,7 @@ name = sys._getframe().f_code.co_name
 not_arg_m = 'not argument'
 not_eno_m = 'not enough argument'
 ivl_arg_m = 'invalid argument'
-debug = True
+debug = False 
 #功能：得到左右分区权重差因子
 #输入：左分区交换机总权重lc_sum_sw，右分区交换机总权重rc_sum_sw
 #输出：
@@ -52,6 +52,13 @@ def get_sum_s_wei(s_wei):
 	sum = 0
 	for sw in s_wei:
 		sum += sw
+	return sum
+#功能：求出分区part_no的权重总和
+def get_sum_s_wei_by_part(s_wei, part, part_no):
+	sum = 0
+	for i in xrange(len(s_wei)):
+		if part[i] == part_no:
+			sum += s_wei[i]
 	return sum
 #功能：将父分区根据交换机权重划分为总权重大致相等的两个子分区
 #输入：
@@ -154,14 +161,17 @@ def kernighan_lin_algorithm(s_wei, l_wei, part, lc_part_no, rc_part_no):
 			pq0.put(gain[i],i)
 		else:
 			pq1.put(gain[i],i)
-	lc_sum_sw = 0
-	rc_sum_sw = 0
 	s_wei_2 = get_s_wei_2(s_wei, l_wei, part)
+	#计算交换机权重
 	#初始路径&中间路径建立请求
-	###########
-	lc_sw_1 = rc_sw_1 = 0
-	lc_sw_2 = rc_sw_2 = 0
-	###########
+	lc_sw_1 = get_sum_s_wei_by_part(s_wei, part, lc_part_no)
+	rc_sw_1 = get_sum_s_wei_by_part(s_wei, part, rc_part_no)
+	lc_sw_2 = get_sum_s_wei_by_part(s_wei_2, part, lc_part_no)
+	rc_sw_2 = get_sum_s_wei_by_part(s_wei_2, part, rc_part_no)
+	lc_sum_sw = lc_sw_1 + lc_sw_2
+	rc_sum_sw = rc_sw_1 + rc_sw_2 
+	edge_cut = lc_sw_2 + rc_sw_2
+	'''	
 	for i in xrange(sn):
 		if part[i] == lc_part_no:
 				   #初始路径   中间路径
@@ -180,6 +190,8 @@ def kernighan_lin_algorithm(s_wei, l_wei, part, lc_part_no, rc_part_no):
 	#计算当前edge_cut
 	for i in range(sn):
 		edge_cut += s_wei_2[i]
+	'''
+	
 	#根据两个优先队列，遍历每个节点
 	tmp_edge_cut = edge_cut
 	for i in xrange(sn):
@@ -205,6 +217,21 @@ def kernighan_lin_algorithm(s_wei, l_wei, part, lc_part_no, rc_part_no):
 			else:
 				print 'part[%2d] = %d = rc_part_no'%(index,part[index])
 		#检查转移交换机index是否会使两个分区的交换机权重更加不平衡
+		if part[index] == lc_part_no:
+			part[index] = rc_part_no
+		else:
+			part[index] = lc_part_no
+		tmp_s_wei_2 = get_s_wei_2(s_wei, l_wei, part)
+		tmp_lc_sum_sw = get_sum_s_wei_by_part(s_wei, part, lc_part_no) + get_sum_s_wei_by_part(tmp_s_wei_2, part, lc_part_no)
+		tmp_rc_sum_sw = get_sum_s_wei_by_part(s_wei, part, rc_part_no) + get_sum_s_wei_by_part(tmp_s_wei_2, part, rc_part_no)
+		tmp_lc_sum_sw = lc_sum_sw
+		tmp_rc_sum_sw = rc_sum_sw
+		if part[index] == lc_part_no:
+			part[index] = rc_part_no
+		else:
+			part[index] = lc_part_no
+		#########################################################
+		'''
 		tmp_lc_sum_sw = lc_sum_sw
 		tmp_rc_sum_sw = rc_sum_sw
 		if part[index] == lc_part_no:
@@ -227,11 +254,13 @@ def kernighan_lin_algorithm(s_wei, l_wei, part, lc_part_no, rc_part_no):
 				else:
 					tmp_lc_sum_sw += l_wei[j][index]
 					tmp_rc_sum_sw += l_wei[index][j]
+		'''
 		if debug:
 			if get_partition_factor(tmp_lc_sum_sw, tmp_rc_sum_sw) > 0.2 :
 				print 'tmp_lc_sum_sw = %d, tmp_rc_sum_sw = %d'%(tmp_lc_sum_sw, tmp_rc_sum_sw)
 				print 'lc_sum_sw = %d, rc_sum_sw = %d'%(lc_sum_sw, rc_sum_sw)
 				content = raw_input('got bad partition factor if shift')
+		#########################################################
 		ec[i] = tmp_edge_cut - gain[index]
 		tmp_edge_cut = ec[i]
 		shift[i] = index
