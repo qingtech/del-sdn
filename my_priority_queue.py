@@ -1,3 +1,4 @@
+import sys
 class MyPriorityQueue(object):
 	
 	def __init__(self, max_size):
@@ -8,12 +9,16 @@ class MyPriorityQueue(object):
 		self.queue = [0]*max_size
 		self.priority = [0]*max_size
 		self.size = 0
+		self.offset = sys.maxint/2
+		self.threadhold = 0.2
 	def empty(self):
 		return self.size <= 0
-	def put(self, pri, ele):
+	def put(self, pri, th, ele):
 		if self.size >= self.max_size:
 			print 'queue is full'
 			return
+		if th > self.threadhold:
+			pri -= self.offset
 		self.queue[self.size] = ele	
 		self.priority[self.size] = pri
 		i = self.size
@@ -28,7 +33,9 @@ class MyPriorityQueue(object):
 			
 			i -= 1
 		self.size += 1
-	def update(self, pri, ele):
+	def update(self, pri, th, ele):
+		if th > self.threadhold:
+			pri -= self.offset
 		index = -1
 		for i in xrange(self.size):
 			if self.queue[i] == ele:
