@@ -109,18 +109,24 @@ def get_gain(index,src_part_no,dst_part_no,part,s_wei,l_wei,sum_sw,src_pq = None
 			if j == index:
 				continue
 			if not check[j]:
+				part[index] = dst_part_no
 				if part[j] == src_part_no:
-					tmp_res = get_gain(j,src_part_no,dst_part_no,part,s_wei,l_wei,sum_sw)
+					tmp_sum_sw = [src_sw_1,src_sw_2,dst_sw_1,dst_sw_2]
+					tmp_res = get_gain(j,src_part_no,dst_part_no,part,s_wei,l_wei,tmp_sum_sw)
 					gain_2[j] = tmp_res[6]
 					src_pq.update(gain[j],gain_2[j],j)
 				if part[j] == dst_part_no:
-					tmp_res = get_gain(j,dst_part_no,src_part_no,part,s_wei,l_wei,sum_sw)
+					tmp_sum_sw = [dst_sw_1,dst_sw_2,src_sw_1,src_sw_2]
+					tmp_res = get_gain(j,dst_part_no,src_part_no,part,s_wei,l_wei,tmp_sum_sw)
 					gain_2[j] = tmp_res[6]
 					dst_pq.update(gain[j],gain_2[j],j)
+				part[index] = src_part_no
 				
 	src_sum_sw = src_sw_1 + src_sw_2
 	dst_sum_sw = dst_sw_1 + dst_sw_2
+	#print 'src_sum_sw = %d, dst_sum_sw = %d'%(src_sum_sw,dst_sum_sw)
 	part_factor = get_partition_factor(src_sum_sw, dst_sum_sw)
+	#print 'part_factor = %f'%part_factor
 	res = [src_sw_1,src_sw_2,dst_sw_1,dst_sw_2,src_sum_sw,dst_sum_sw,part_factor]
 	return res
 	################################################################
@@ -141,11 +147,11 @@ def randomly_get_bipartition(s_wei, l_wei, lc_part_no, rc_part_no):
 	part = [0]*sn
 	lsw = 0
 	rsw = sum_s_wei
-	d = abs(rsw-lsw)
+	f = 1.0
 	s_wei_2 = []
 	#左右分区交换机权重不超过总权重0.1%
 	#如果经过count仍找不到符合以上条件的左右分区，则取count中最佳
-	while abs(rsw-lsw) > (rsw + lsw)*0.1:
+	while f > 0.1:
 		rsw = lsw = 0
 		tmp_part = [0]*sn
 		#将初始路径请求（域内流）添加到lsw和rsw
@@ -164,15 +170,19 @@ def randomly_get_bipartition(s_wei, l_wei, lc_part_no, rc_part_no):
 			else:
 				lsw += tmp_s_wei_2[i]
 		#比较该次划分和比历史最好划分
-		if d > abs(rsw-lsw):
+		tmp_f = get_partition_factor(lsw,rsw)
+		#print 'lsw = %d, rsw = %d'%(lsw,rsw)
+		#print 'tmp_f = %f'%tmp_f
+		if f > tmp_f:
 			part = tmp_part
-			d = abs(rsw-lsw)
+			f = tmp_f
 			s_wei_2 = tmp_s_wei_2
 		count -= 1
 		if count <= 0:
 			break
 	#print 's_wei_2[0] = %d'%tmp_s_wei_2[0]
 	if debug:
+	#if True:
 		edge_cut = get_sum_s_wei(s_wei_2)
 		lsn = rsn = 0
 		lsw = rsw = 0
@@ -183,12 +193,12 @@ def randomly_get_bipartition(s_wei, l_wei, lc_part_no, rc_part_no):
 			else:
 				rsn += 1
 				rsw += (s_wei[i] + s_wei_2[i])
-		print '----------------------------------------------------------------------'
-		print 'randomly_get_bipartiton'
-		print 'edge_cut = %d'%edge_cut
-		print 'lsn = %d, rsn = %d'%(lsn,rsn)
-		print 'abs(lsw-rsw)*1.0/(lsw+rsw) = ',
-		print 'abs(%d-%d)*1.0/(%d+%d) = %f'%(lsw,rsw,lsw,rsw,(abs(lsw-rsw)*1.0/(lsw+rsw)))
+		#print '----------------------------------------------------------------------'
+		#print 'randomly_get_bipartiton'
+		#print 'edge_cut = %d'%edge_cut
+		#print 'lsn = %d, rsn = %d'%(lsn,rsn)
+		#print 'lsw = %d, rsw = %d'%(lsw,rsw)
+		#print 'fffff = %f'%(get_partition_factor(lsw,rsw))
 	return part
 #功能：根据随机划分好的两个分区，通过Kernighan-Lin算法对其进行调整，使得edge-cut达到最少
 #输入：交换机权重s_wei[]，链路权重l_wei[][]，划分数组part[]
@@ -205,7 +215,7 @@ def kernighan_lin_algorithm(s_wei, l_wei, part, lc_part_no, rc_part_no):
 	if len(part) != sn:
 		error.report(filename, name, frame.f_lineno, ivl_arg_m)
 	#算法开始	
-	max = 1000000000 
+	max = sys.maxint/2 
 	gain = [0]*sn
 	gain_2 = [0.0]*sn
 	ec = [max]*sn
@@ -328,12 +338,17 @@ def kernighan_lin_algorithm(s_wei, l_wei, part, lc_part_no, rc_part_no):
 	#选取取得最小edge-cut的放置
 	index = -1
 	tmp_edge_cut = edge_cut 
+	#print '*******************************'
 	for i in xrange(sn):
-		if th[i]<0.2 and ec[i] < tmp_edge_cut:
+		#print 'i=%d,th[i]=%f'%(i,th[i])
+		#print 'ec[i] = %d'%ec[i]
+		if th[i]<0.1 and ec[i] < tmp_edge_cut:
 			index = i
 			tmp_edge_cut = ec[i]
 	#将取得最小edge-cut后续的shift undone
 	edge_cut = tmp_edge_cut
+	#print 'index=%d,th[index]=%f'%(index,th[index])
+	#print 'edge_cut = %d'%edge_cut
 	for i in xrange(index+1, sn):
 		if shift[i] == -1:
 			'''
@@ -347,6 +362,7 @@ def kernighan_lin_algorithm(s_wei, l_wei, part, lc_part_no, rc_part_no):
 		else:
 			part[j] = lc_part_no
 	if debug:
+	#if True:
 		s_wei_2 = get_s_wei_2(s_wei, l_wei, part)
 		lc_sum_sw = rc_sum_sw = 0
 		tmp_edge_cut = 0
@@ -386,8 +402,11 @@ def initial_partition(s_wei,l_wei,level,part_no):
 		if len(l_wei[i]) != sn:
 			error.report(filename, name, frame.f_lineno, ivl_arg_m)
 	part = [part_no]*sn
-	'''
+	#最后一层，无需再划分
+	if level == gv.level:
+		return part
 	###############
+	'''
 	print '----------------l_wei-----------------------'
 	for i in xrange(sn):
 		print '%2d '%i,
@@ -397,11 +416,17 @@ def initial_partition(s_wei,l_wei,level,part_no):
 		for j in xrange(sn):
 			print '%2d '%l_wei[i][j],
 		print ''
-	###############
+	print '----------------s_wei-----------------------'
+	for i in xrange(sn):
+		print '%2d '%i,
+	print ''
+	print '--------------------------------------------'
+	for i in xrange(sn):
+		print '%2d '%s_wei[i],
+	print ''
 	'''
-	#最后一层，无需再划分
-	if level == gv.level:
-		return part
+
+	###############
 	#get bipartition of graph
 	#获取两个子分区
 	#         1
@@ -417,7 +442,7 @@ def initial_partition(s_wei,l_wei,level,part_no):
 	s_wei_2 = [0]*sn
 	edge_cut = sys.maxint
 	index = -1
-	for i in range(5):
+	for i in xrange(50):
 		tmp_part = randomly_get_bipartition(s_wei, l_wei, lc_part_no, rc_part_no)
 		#part = tmp_part
 		#break
@@ -457,10 +482,8 @@ def initial_partition(s_wei,l_wei,level,part_no):
 	rc_index = [0]*rc_s_num
 	lc_s_wei = [0]*lc_s_num
 	rc_s_wei = [0]*rc_s_num
-	#lc_l_wei = [[0 for col in range(lc_s_num)] for row in range(lc_s_num)]
-	#rc_l_wei = [[0 for col in range(rc_s_num)] for row in range(rc_s_num)]
-	lc_l_wei = [[0]*lc_s_num]*lc_s_num
-	rc_l_wei = [[0]*rc_s_num]*rc_s_num
+	lc_l_wei = [[0 for col in xrange(lc_s_num)] for row in xrange(lc_s_num)]
+	rc_l_wei = [[0 for col in xrange(rc_s_num)] for row in xrange(rc_s_num)]
 	'''
 	what a f*cking bug 囧。。。。。
 	lc_l_wei = [[0]*lc_s_num]*lc_s_num
@@ -525,17 +548,17 @@ def initial_partition(s_wei,l_wei,level,part_no):
 	#print 'part.len=%d,part_0.len=%d'%(len(part),len(part_0))
 	for i in range(lc_s_num):
 		part[lc_index[i]] = part_0[i]
-		s_wei[lc_index[i]] = lc_s_wei[i]
+		#s_wei[lc_index[i]] = lc_s_wei[i]
 	part_1 = initial_partition(rc_s_wei,rc_l_wei,level+1, rc_part_no)
 	for i in range(rc_s_num):
 		part[rc_index[i]] = part_1[i]
-		s_wei[rc_index[i]] = rc_s_wei[i]
+		#s_wei[rc_index[i]] = rc_s_wei[i]
 	return part
 if __name__ == '__main__':
 	#sn = 16*1
 	#s_wei =  [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
 	#l_wei = [[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1] for row in range(sn)]
-	max = 1000000000
+	max = sys.maxint
 	load_topo.load_topo()
 	sn = gv.s_num
 	s_wei = [1]*sn
