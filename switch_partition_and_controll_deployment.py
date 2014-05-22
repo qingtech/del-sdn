@@ -174,7 +174,8 @@ def switch_partition_and_controller_deployment(net_topo_file_name,level):
 		c_index = res[3]
 		ctr_i = controller_deployment(c_s_wei,c_l_wei,c_l_lan)
 		ctr_place[c_part_no-pn] = c_index[ctr_i]
-	if False:
+	#if False:
+	if True:
 		print '控制器放置位置：'
 		for i in xrange(pn):
 			print '%2d '%(i+pn),
@@ -228,20 +229,22 @@ if __name__ == '__main__':
 	if False:
 		print 'i=%d'%i
 		print 'switch partition and controller placement:'
-	res = switch_partition_and_controller_deployment('os3e.txt',2)
+	res = switch_partition_and_controller_deployment('100sw.txt',3)
 	part = res[0]
 	ctr_place = res[1]
-	print '交换机分区情况'
-	for i in xrange(len(part)):
-		print '%2d '%i,
-	print ''
-	for i in xrange(len(part)):
-		print '%2d '%part[i],
-	print ''
-	print '控制器放置位置'
-	for i in xrange(len(ctr_place)):
-		print '%2d '%(2**2+i),
-	print ''
-	for i in xrange(len(ctr_place)):
-		print '%2d '%ctr_place[i],
-	print ''
+	if False:
+	#if True:
+		print '交换机分区情况'
+		for i in xrange(len(part)):
+			print '%2d '%i,
+		print ''
+		for i in xrange(len(part)):
+			print '%2d '%part[i],
+		print ''
+		print '控制器放置位置'
+		for i in xrange(len(ctr_place)):
+			print '%2d '%(2**2+i),
+		print ''
+		for i in xrange(len(ctr_place)):
+			print '%2d '%ctr_place[i],
+		print ''

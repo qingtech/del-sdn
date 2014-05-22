@@ -2,6 +2,7 @@
 import sys
 import gv
 import error
+import re
 frame = sys._getframe()
 filename = sys._getframe().f_code.co_filename
 name = sys._getframe().f_code.co_name
@@ -45,7 +46,8 @@ def load_topo():
 		if not line:
 			error.report(filename, name, frame.f_lineno, '%s\ni=%d'%(not_eno_m,i))
 		line = line.strip('\n')
-		tmp = line.split(' ')
+		#tmp = line.split(' ')
+		tmp = re.split('\D+',line)
 		if len(tmp)<sn:
 			error.report(filename, name, frame.f_lineno, '%s\ni=%d'%(not_eno_m,i))
 		for j in range(sn):
