@@ -1,7 +1,8 @@
 #encoding=utf-8
 import gv
-import sys
 import error
+import sys
+import copy
 frame = sys._getframe()
 filename = sys._getframe().f_code.co_filename
 name = sys._getframe().f_code.co_name
@@ -15,7 +16,7 @@ ivl_arg_m = 'invalid argument'
 #l_lan[i][j]表示该链路的“距离”，交换机与控制器的通讯总是走“距离”最短的路径，使用Floyd算法得到
 #输出：
 #i：与控制器直接相连的交换机
-def controller_place(s_wei,l_lan):
+def controller_place(s_wei,l_wei,l_lan):
 	#数据合法性检验
 	sn = len(s_wei)
 	if sn < 0:
@@ -25,7 +26,17 @@ def controller_place(s_wei,l_lan):
 	for i in range(sn):
 		if len(l_lan[i]) != sn:
 			error.report(filename, name, frame.f_lineno, ivl_arg_m)
-	map = l_lan
+	#算法开始
+	#每个交换机和控制器通讯的次数（流建立请求，规则下发）
+	com_num = [0]*sn
+	for i in xrange(sn):
+		#流建立请求（包括回应）
+		com_num[i] = s_wei[i]*2
+		for j in xrange(sn):
+			#规则建立部分
+			com_num[i] += l_wei[j][i]
+	#Floyd最短路径
+	map = copy.deepcopy(l_lan)
 	for i in range(sn):
 		for j in range(sn):
 			for k in range(sn):
@@ -36,7 +47,7 @@ def controller_place(s_wei,l_lan):
 	for i in range(sn):
 		tmp_cost = 0
 		for j in range(sn):
-			tmp_cost += s_wei[j]*map[i][j]
+			tmp_cost += com_num[j]*map[i][j]
 		if tmp_cost < cost:
 			ii = i
 			cost = tmp_cost
@@ -59,6 +70,7 @@ if __name__ == '__main__':
 		     	3(2)
 	"""
 	s_wei = [2,2,10,2]
-	l_lan = [[0,1,1,1],[max,0,1,max],[1,max,0,max],[max,max,1,0]]
-	i = controller_place(s_wei, l_lan)
+	l_lan = [[0,1,1,1],[1,0,max,max],[1,max,0,max],[1,max,max,0]]
+	l_wei = [[0,1,1,1],[1,0,0,0],[1,0,0,0],[1,0,0,0]]
+	i = controller_place(s_wei,l_wei, l_lan)
 	print 'i=%d'%i
