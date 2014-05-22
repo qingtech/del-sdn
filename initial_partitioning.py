@@ -130,6 +130,53 @@ def get_gain(index,src_part_no,dst_part_no,part,s_wei,l_wei,sum_sw,src_pq = None
 	res = [src_sw_1,src_sw_2,dst_sw_1,dst_sw_2,src_sum_sw,dst_sum_sw,part_factor]
 	return res
 	################################################################
+#功能：获得分区号为c_part_no的分区子网络
+#输入：s_swei[],s_wei_2[],l_wei[][],part,c_part_no
+#输出：分区子网络_net_topo[c_s_wei[],c_l_wei[]],对应父网络的交换机编号c_index[]
+def get_child_network(s_wei,s_wei_2,l_wei,part,c_part_no):
+	sn = len(s_wei)
+	#数据合法性检验
+	if sn < 0:
+		error.report(filename, name, frame.f_lineno, ivl_arg_m)
+	if len(l_wei) != sn:
+		error.report(filename, name, frame.f_lineno, ivl_arg_m)
+	for i in range(sn):
+		if len(l_wei[i]) != sn:
+			error.report(filename, name, frame.f_lineno, ivl_arg_m)
+	if len(part) != sn:
+		error.report(filename, name, frame.f_lineno, ivl_arg_m)
+	#算法开始	
+
+	#统计分区交换机个数
+	c_s_num = 0
+	for i in range(sn):
+		if part[i] == c_part_no:
+			c_s_num +=1
+
+	c_index = [0]*c_s_num
+	c_s_wei = [0]*c_s_num
+	c_l_wei = [[0 for col in xrange(c_s_num)] for row in xrange(c_s_num)]
+	'''
+	what a f*cking bug 囧。。。。。
+	c_l_wei = [[0]*c_s_num]*c_s_num
+	'''
+	#index,s_wei
+	ii = 0
+	for i in xrange(sn):
+		if part[i] == c_part_no:
+			c_index[ii] = i
+			c_s_wei[ii] = s_wei[i] + s_wei_2[i]
+			ii += 1
+	#复杂度：O(switch_number^2)
+	#c_l_wei
+	for i in xrange(c_s_num):
+		ii = c_index[i]
+		for j in xrange(c_s_num):
+			jj = c_index[j]
+			c_l_wei[i][j] = l_wei[ii][jj]
+	res = [c_s_wei,c_l_wei,c_index]
+	return res
+
 #功能：将父分区根据交换机权重划分为总权重大致相等的两个子分区
 #输入：
 #父分区交换机权重数组：s_wei[]
@@ -466,7 +513,8 @@ def initial_partition(s_wei,l_wei,level,part_no):
 			part = tmp_part
 			index = i
 	#print 'index = %d'%index
-		
+	
+	'''		
 	#left part of bipart
 	#right part of bipart
 	#统计左右分区交换机个数
@@ -484,12 +532,7 @@ def initial_partition(s_wei,l_wei,level,part_no):
 	rc_s_wei = [0]*rc_s_num
 	lc_l_wei = [[0 for col in xrange(lc_s_num)] for row in xrange(lc_s_num)]
 	rc_l_wei = [[0 for col in xrange(rc_s_num)] for row in xrange(rc_s_num)]
-	'''
-	what a f*cking bug 囧。。。。。
-	lc_l_wei = [[0]*lc_s_num]*lc_s_num
-	rc_l_wei = [[0]*rc_s_num]*rc_s_num
-	'''
-	#index,s_wei
+
 	i0 = 0
 	i1 = 0
 	for i in range(sn):
@@ -508,21 +551,7 @@ def initial_partition(s_wei,l_wei,level,part_no):
 		for j in xrange(lc_s_num):
 			jj = lc_index[j]
 			lc_l_wei[i][j] = l_wei[ii][jj]
-	'''
-	#################
-	flag = False
-	print 'lc_l_wei'
-	for i in range(lc_s_num):
-		print '%2d '%lc_index[i],
-	print ''
-	print '----------------------------------------------------------'
-	for i in range(lc_s_num):
-		for j in xrange(lc_s_num):
-			print '%2d '%(lc_l_wei[i][j]),
-			flag = lc_l_wei[i][j] - lc_l_wei[j][i]
-		print ''
-	#################
-	'''
+	
 	#rc_l_wei
 	for i in xrange(rc_s_num):
 		ii = rc_index[i]
@@ -530,27 +559,23 @@ def initial_partition(s_wei,l_wei,level,part_no):
 			jj = rc_index[j]
 			rc_l_wei[i][j] = l_wei[ii][jj]
 	'''
-	########################
-	flag = False	
-	print 'rc_l_wei'
-	for i in range(rc_s_num):
-		print '%2d '%rc_index[i],
-	print ''
-	print '----------------------------------------------------------'
-	for i in range(rc_s_num):
-		for j in xrange(rc_s_num):
-			print '%2d '%(rc_l_wei[i][j]),
-			flag = rc_l_wei[i][j] - rc_l_wei[j][i]
-		print ''
-	########################
-	'''
+	#####################
+	lc_net = get_child_network(s_wei,s_wei_2,l_wei,part,lc_part_no)
+	lc_s_wei = lc_net[0]
+	lc_l_wei = lc_net[1]
+	lc_index = lc_net[2]
+	rc_net = get_child_network(s_wei,s_wei_2,l_wei,part,rc_part_no)
+	rc_s_wei = rc_net[0]
+	rc_l_wei = rc_net[1]
+	rc_index = rc_net[2]
+	####################
 	part_0 = initial_partition(lc_s_wei,lc_l_wei,level+1, lc_part_no)
 	#print 'part.len=%d,part_0.len=%d'%(len(part),len(part_0))
-	for i in range(lc_s_num):
+	for i in range(len(lc_s_wei)):
 		part[lc_index[i]] = part_0[i]
 		#s_wei[lc_index[i]] = lc_s_wei[i]
 	part_1 = initial_partition(rc_s_wei,rc_l_wei,level+1, rc_part_no)
-	for i in range(rc_s_num):
+	for i in range(len(rc_s_wei)):
 		part[rc_index[i]] = part_1[i]
 		#s_wei[rc_index[i]] = rc_s_wei[i]
 	return part
@@ -559,6 +584,7 @@ if __name__ == '__main__':
 	#s_wei =  [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
 	#l_wei = [[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1] for row in range(sn)]
 	max = sys.maxint
+	gv.net_topo_file_name = 'os3e.txt'
 	load_topo.load_topo()
 	sn = gv.s_num
 	s_wei = [1]*sn
@@ -568,23 +594,6 @@ if __name__ == '__main__':
 		for j in range(sn):
 			if l_wei[i][j] == 0:
 				l_lan[i][j] = max
-	'''
-	print 'l_wei'
-	for i in range(sn):
-		for j in range(sn):
-			print '%d '%l_wei[i][j],
-		print ''
-	print 'l_lan'
-	for i in range(sn):
-		for j in range(sn):
-			print '%d '%l_lan[i][j],
-		print ''
-	print 'gv.net_topo'
-	for i in range(sn):
-		for j in range(sn):
-			print '%d '%gv.net_topo[i][j],
-		print ''
-	'''
 	partition = initial_partition(s_wei, l_wei, 0, 1)
 	pn = 2**gv.level
 	part_s_num = [0]*pn
@@ -612,3 +621,4 @@ if __name__ == '__main__':
 	for i in range(sn):
 		edge_cut += s_wei_2[i]
 	print '割边数量：%d'%edge_cut
+

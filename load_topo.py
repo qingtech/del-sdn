@@ -9,18 +9,17 @@ not_arg_m = 'not argument'
 not_eno_m = 'not enough argument'
 ivl_arg_m = 'invalid argument'
 def load_topo():
-	#set controller number:gv.c_num
 	#set switch number:gv.s_num
-	#set link number:gv.l_num
 	#load network topology:
 	
-	f = open(gv.net_topo_file)
+	f = open(gv.net_topo_file_name)
 	line = f.readline()
 	
 	if not line:
 		error.report(filename, name, frame.f_lineno, not_arg_m)
 
 	line = line.strip('\n')
+	'''
 	tmp = line.split(" ")
 	if(len(tmp)<3):
 		error.report(filename, name, frame.f_lineno, not_eno_m)
@@ -31,6 +30,10 @@ def load_topo():
 	gv.c_num = int(tmp[0]);
 	gv.s_num = int(tmp[1]);
 	gv.l_num = int(tmp[2]);
+	'''
+	if not line.isdigit():
+		error.report(filename, name, frame.f_lineno, ivl_arg_m)
+	gv.s_num = int(line);
 	#load network topology
 	sn = gv.s_num
 	gv.net_topo = [[0 for col in range(sn)] for row in range(sn)]
