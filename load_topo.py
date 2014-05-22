@@ -55,9 +55,11 @@ def load_topo():
 				error.report(filename, name, frame.f_lineno, '%s\ni=%d,j=%d'%(ivl_arg_m,i,j))
 			gv.net_topo[i][j] = int(tmp[j])
 		i += 1
+	f.close()
 			
 			
 if __name__ == '__main__':
+	'''
 	load_topo()
 	print 'controller number: %d,'%gv.c_num,
 	print 'switch number: %d,'%gv.s_num,
@@ -72,3 +74,4 @@ if __name__ == '__main__':
 		for j in range(gv.s_num):
 			print '%d '%gv.net_topo[i][j],
 		print ' '
+	'''

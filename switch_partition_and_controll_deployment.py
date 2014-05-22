@@ -136,7 +136,7 @@ def controller_deployment(s_wei,l_wei,l_lan):
 		print '+++++++++++++++++++++++++++++++++++++++++'
 	#print '通讯总花费：%d'%cost 
 	#print '+++++++++++++++++++++++++++++++++++++++++'
-	return ii
+	return [ii,cost]
 #功能：划分区域，放置控制器
 #输入：网络拓扑文件名net_topo_file_name，分区层数level（分区数量为：2**level)
 #输出：划分数组part[sn]（sn为交换机数量）,控制器放置数组ctr_place[n_part]
@@ -165,17 +165,26 @@ def switch_partition_and_controller_deployment(net_topo_file_name,level):
 	part_s_num = [0]*pn
 	part_s_wei   = [0]*pn
 	s_wei_2 = get_s_wei_2(s_wei, l_wei, partition)
+	edge_cut = 0
+	for i in range(sn):
+		edge_cut += s_wei_2[i]
 	ctr_place = [-1]*pn
+	part_cost = [0]*pn
 	for c_part_no in xrange(pn,pn*2):
 		res = get_child_network(s_wei,s_wei_2,l_wei,l_lan,partition,c_part_no)
 		c_s_wei = res[0]
 		c_l_wei = res[1]
 		c_l_lan = res[2]
 		c_index = res[3]
-		ctr_i = controller_deployment(c_s_wei,c_l_wei,c_l_lan)
+		res = controller_deployment(c_s_wei,c_l_wei,c_l_lan)
+		ctr_i = res[0]
 		ctr_place[c_part_no-pn] = c_index[ctr_i]
-	#if False:
-	if True:
+		part_cost[c_part_no-pn] = res[1]
+	for i in range(sn):
+		part_s_num[partition[i]-pn] += 1
+		part_s_wei[partition[i]-pn] += s_wei[i] + s_wei_2[i]
+	if False:
+	#if True:
 		print '控制器放置位置：'
 		for i in xrange(pn):
 			print '%2d '%(i+pn),
@@ -194,8 +203,6 @@ def switch_partition_and_controller_deployment(net_topo_file_name,level):
 		print ''
 		print '交换机分区情况'
 		for i in range(sn):
-			part_s_num[partition[i]-pn] += 1
-			part_s_wei[partition[i]-pn] += s_wei[i] + s_wei_2[i]
 			print '%2d '%partition[i],
 		print ''
 		print '各个分区交换机数量'
@@ -206,12 +213,9 @@ def switch_partition_and_controller_deployment(net_topo_file_name,level):
 		for i in range(pn):
 			print '%2d '%part_s_wei[i],
 		print ''
-		edge_cut = 0
-		for i in range(sn):
-			edge_cut += s_wei_2[i]
 		print '割边数量：%d'%edge_cut
 	
-	return [partition,ctr_place]
+	return [partition,ctr_place,part_s_num,part_s_wei,edge_cut,part_cost]
 if __name__ == '__main__':
 	max = 10000
 	"""
@@ -225,26 +229,56 @@ if __name__ == '__main__':
 	s_wei = [2,2,10,2]
 	l_lan = [[0,1,1,1],[1,0,max,max],[1,max,0,max],[1,max,max,0]]
 	l_wei = [[0,1,1,1],[1,0,0,0],[1,0,0,0],[1,0,0,0]]
-	i = controller_deployment(s_wei,l_wei,l_lan)
+	i = controller_deployment(s_wei,l_wei,l_lan)[0]
 	if False:
 		print 'i=%d'%i
 		print 'switch partition and controller placement:'
-	res = switch_partition_and_controller_deployment('100sw.txt',3)
-	part = res[0]
-	ctr_place = res[1]
-	if False:
-	#if True:
-		print '交换机分区情况'
-		for i in xrange(len(part)):
-			print '%2d '%i,
-		print ''
-		for i in xrange(len(part)):
-			print '%2d '%part[i],
-		print ''
-		print '控制器放置位置'
-		for i in xrange(len(ctr_place)):
-			print '%2d '%(2**2+i),
-		print ''
-		for i in xrange(len(ctr_place)):
-			print '%2d '%ctr_place[i],
-		print ''
+	fn = ['33sw.txt','50sw.txt','100sw.txt']
+	nn = ['33','50','100']
+	output_file_name_1 = 'output.txt'
+	output_file_name_2 = 'output_2.txt'
+	out_1 = open(output_file_name_1,'w')
+	out_2 = open(output_file_name_2,'w')
+	for i in xrange(1):
+		for level in xrange(1,6):
+			res = switch_partition_and_controller_deployment(fn[i],level)
+			pn = 2**level
+			part = res[0]
+			ctr_place = res[1]
+			part_s_num = res[2]
+			part_s_wei = res[3]
+			edge_cut = res[4]
+			part_cost = res[5]
+			out_1.write('%s-%d\n'%(nn[i],pn))
+			for i in xrange(pn,2*pn):
+				for j in xrange(len(part)):
+					if part[j] == i:
+						out_1.write('%d,'%j)
+				out_1.write('%d\n'%ctr_place[i-pn])
+			#if False:
+			if True:
+				print '各个分区交换机数量'
+				for i in xrange(len(part_s_num)):
+					print '%2d '%part_s_num[i],
+				print ''
+				print '各个分区的交换机权重总和'
+				for i in xrange(len(part_s_wei)):
+					print '%2d '%part_s_wei[i],
+				print ''
+				print '割边数量：%d'%edge_cut
+
+				print '交换机分区情况'
+				for i in xrange(len(part)):
+					print '%2d '%part[i],
+				print ''
+				print '控制器放置位置'
+				for i in xrange(len(ctr_place)):
+					print '%2d '%(2**level+i),
+				print ''
+				for i in xrange(len(ctr_place)):
+					print '%2d '%ctr_place[i],
+				print ''
+				print '各个分区花费代价'
+				for i in xrange(len(part_cost)):
+					print '%2d '%part_cost[i],
+				print ''
