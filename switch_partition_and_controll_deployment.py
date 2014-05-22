@@ -134,8 +134,8 @@ def controller_deployment(s_wei,l_wei,l_lan):
 			print ''
 		print '通讯总花费：%d'%cost 
 		print '+++++++++++++++++++++++++++++++++++++++++'
-	print '通讯总花费：%d'%cost 
-	print '+++++++++++++++++++++++++++++++++++++++++'
+	#print '通讯总花费：%d'%cost 
+	#print '+++++++++++++++++++++++++++++++++++++++++'
 	return ii
 #功能：划分区域，放置控制器
 #输入：网络拓扑文件名net_topo_file_name，分区层数level（分区数量为：2**level)
@@ -174,36 +174,41 @@ def switch_partition_and_controller_deployment(net_topo_file_name,level):
 		c_index = res[3]
 		ctr_i = controller_deployment(c_s_wei,c_l_wei,c_l_lan)
 		ctr_place[c_part_no-pn] = c_index[ctr_i]
-	print '控制器放置位置：'
-	for i in xrange(pn):
-		print '%2d '%(i+pn),
-	print ''
-	for i in xrange(pn):
-		print '%2d '%ctr_place[i],
-	print ''
-	print '********************************************************'
-	print 'switch weight'
-	for i in range(sn):
-		print '%2d '%s_wei[i],
-	print ''
-	print '交换机分区情况'
-	for i in range(sn):
-		part_s_num[partition[i]-pn] += 1
-		part_s_wei[partition[i]-pn] += s_wei[i] + s_wei_2[i]
-		print '%2d '%partition[i],
-	print ''
-	print '各个分区交换机数量'
-	for i in range(pn):
-		print '%2d '%part_s_num[i],
-	print ''
-	print '各个分区的交换机权重总和'
-	for i in range(pn):
-		print '%2d '%part_s_wei[i],
-	print ''
-	edge_cut = 0
-	for i in range(sn):
-		edge_cut += s_wei_2[i]
-	print '割边数量：%d'%edge_cut
+	if False:
+		print '控制器放置位置：'
+		for i in xrange(pn):
+			print '%2d '%(i+pn),
+		print ''
+		for i in xrange(pn):
+			print '%2d '%ctr_place[i],
+		print ''
+		print '********************************************************'
+		print '交换机编号'
+		for i in xrange(sn):
+			print '%2d '%i,
+		print ''
+		print '交换机权重：'
+		for i in range(sn):
+			print '%2d '%(s_wei[i]+s_wei_2[i]),
+		print ''
+		print '交换机分区情况'
+		for i in range(sn):
+			part_s_num[partition[i]-pn] += 1
+			part_s_wei[partition[i]-pn] += s_wei[i] + s_wei_2[i]
+			print '%2d '%partition[i],
+		print ''
+		print '各个分区交换机数量'
+		for i in range(pn):
+			print '%2d '%part_s_num[i],
+		print ''
+		print '各个分区的交换机权重总和'
+		for i in range(pn):
+			print '%2d '%part_s_wei[i],
+		print ''
+		edge_cut = 0
+		for i in range(sn):
+			edge_cut += s_wei_2[i]
+		print '割边数量：%d'%edge_cut
 	
 	return [partition,ctr_place]
 if __name__ == '__main__':
@@ -223,4 +228,20 @@ if __name__ == '__main__':
 	if False:
 		print 'i=%d'%i
 		print 'switch partition and controller placement:'
-	switch_partition_and_controller_deployment('os3e.txt',2)
+	res = switch_partition_and_controller_deployment('os3e.txt',2)
+	part = res[0]
+	ctr_place = res[1]
+	print '交换机分区情况'
+	for i in xrange(len(part)):
+		print '%2d '%i,
+	print ''
+	for i in xrange(len(part)):
+		print '%2d '%part[i],
+	print ''
+	print '控制器放置位置'
+	for i in xrange(len(ctr_place)):
+		print '%2d '%(2**2+i),
+	print ''
+	for i in xrange(len(ctr_place)):
+		print '%2d '%ctr_place[i],
+	print ''
