@@ -125,6 +125,17 @@ def get_gain(index,src_part_no,dst_part_no,part,s_wei,l_wei,sum_sw,src_pq = None
 	src_sum_sw = src_sw_1 + src_sw_2
 	dst_sum_sw = dst_sw_1 + dst_sw_2
 	#print 'src_sum_sw = %d, dst_sum_sw = %d'%(src_sum_sw,dst_sum_sw)
+	if len(part) == 1:
+		print 'src_sum_sw = %d, dst_sum_sw = %d'%(src_sum_sw,dst_sum_sw)
+		print 'sum_sw[0] = %d'%sum_sw[0]
+		print 'sum_sw[1] = %d'%sum_sw[1]
+		print 'sum_sw[2] = %d'%sum_sw[2]
+		print 'sum_sw[3] = %d'%sum_sw[3]
+		print 'gain = %s'%gain
+		print 'part[0] = %d'%part[0]
+		print 'src_part_no = %d'%src_part_no
+		print 'dst_part_no = %d'%dst_part_no
+	#print 'len(part) = %d'%len(part)
 	part_factor = get_partition_factor(src_sum_sw, dst_sum_sw)
 	#print 'part_factor = %f'%part_factor
 	res = [src_sw_1,src_sw_2,dst_sw_1,dst_sw_2,src_sum_sw,dst_sum_sw,part_factor]
@@ -191,7 +202,7 @@ def randomly_get_bipartition(s_wei, l_wei, lc_part_no, rc_part_no):
 	for sw in s_wei:
 		sum_s_wei += sw
 	sn = len(s_wei)
-	part = [0]*sn
+	part = [rc_part_no]*sn
 	lsw = 0
 	rsw = sum_s_wei
 	f = 1.0
@@ -451,6 +462,10 @@ def initial_partition(s_wei,l_wei,level,part_no):
 	part = [part_no]*sn
 	#最后一层，无需再划分
 	if level == gv.level:
+		return part
+	#如果只有一个交换机，无需再划分
+	if sn == 1:
+		part[0] = part_no*(2**(gv.level-level))
 		return part
 	###############
 	'''

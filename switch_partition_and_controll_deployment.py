@@ -61,7 +61,9 @@ def get_child_network(s_wei,s_wei_2,l_wei,l_lan,part,c_part_no):
 	for i in range(sn):
 		if part[i] == c_part_no:
 			c_s_num +=1
-
+	#如果不存在该分区子网络
+	if c_s_num == 0:
+		return None
 	c_index = [0]*c_s_num
 	c_s_wei = [0]*c_s_num
 	c_l_wei = [[0 for col in xrange(c_s_num)] for row in xrange(c_s_num)]
@@ -172,6 +174,11 @@ def switch_partition_and_controller_deployment(net_topo_file_name,level):
 	part_cost = [0]*pn
 	for c_part_no in xrange(pn,pn*2):
 		res = get_child_network(s_wei,s_wei_2,l_wei,l_lan,partition,c_part_no)
+		if res == None:
+			ctr_place[c_part_no-pn] = -1
+			part_cost[c_part_no-pn] = 0
+			continue
+			
 		c_s_wei = res[0]
 		c_l_wei = res[1]
 		c_l_lan = res[2]
@@ -239,9 +246,9 @@ if __name__ == '__main__':
 	output_file_name_2 = 'output_2.txt'
 	out_1 = open(output_file_name_1,'w')
 	out_2 = open(output_file_name_2,'w')
-	for i in xrange(1):
-		for level in xrange(1,6):
-			res = switch_partition_and_controller_deployment(fn[i],level)
+	for k in xrange(1):
+		for level in xrange(5,6):
+			res = switch_partition_and_controller_deployment(fn[k],level)
 			pn = 2**level
 			part = res[0]
 			ctr_place = res[1]
@@ -249,7 +256,7 @@ if __name__ == '__main__':
 			part_s_wei = res[3]
 			edge_cut = res[4]
 			part_cost = res[5]
-			out_1.write('%s-%d\n'%(nn[i],pn))
+			out_1.write('[%s-%d]\n'%(nn[k],pn))
 			for i in xrange(pn,2*pn):
 				for j in xrange(len(part)):
 					if part[j] == i:
@@ -282,3 +289,4 @@ if __name__ == '__main__':
 				for i in xrange(len(part_cost)):
 					print '%2d '%part_cost[i],
 				print ''
+				print '--------------------------------------------------------'

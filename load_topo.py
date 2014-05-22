@@ -33,6 +33,8 @@ def load_topo():
 	gv.l_num = int(tmp[2]);
 	'''
 	if not line.isdigit():
+		print 'file_name = %s'%gv.net_topo_file_name
+		print 'line = %s'%line
 		error.report(filename, name, frame.f_lineno, ivl_arg_m)
 	gv.s_num = int(line);
 	#load network topology
