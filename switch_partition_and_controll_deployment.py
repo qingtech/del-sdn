@@ -246,8 +246,8 @@ if __name__ == '__main__':
 	output_file_name_2 = 'output_2.txt'
 	out_1 = open(output_file_name_1,'w')
 	out_2 = open(output_file_name_2,'w')
-	for k in xrange(1):
-		for level in xrange(5,6):
+	for k in xrange(3):
+		for level in xrange(1,6):
 			res = switch_partition_and_controller_deployment(fn[k],level)
 			pn = 2**level
 			part = res[0]
@@ -257,11 +257,43 @@ if __name__ == '__main__':
 			edge_cut = res[4]
 			part_cost = res[5]
 			out_1.write('[%s-%d]\n'%(nn[k],pn))
+			out_2.write('[%s-%d]\n'%(nn[k],pn))
 			for i in xrange(pn,2*pn):
 				for j in xrange(len(part)):
 					if part[j] == i:
 						out_1.write('%d,'%j)
+						out_2.write('%d,'%j)
 				out_1.write('%d\n'%ctr_place[i-pn])
+				out_2.write('%d\n'%ctr_place[i-pn])
+			
+			
+			out_2.write('各个分区交换机数量\n')
+			for i in xrange(len(part_s_num)):
+				out_2.write('%2d '%part_s_num[i])
+			out_2.write('\n')
+			out_2.write('各个分区的交换机权重总和\n')
+			for i in xrange(len(part_s_wei)):
+				out_2.write('%2d '%part_s_wei[i])
+			out_2.write('\n')
+			out_2.write('割边数量：%d\n'%edge_cut)
+
+			out_2.write('交换机分区情况\n')
+			for i in xrange(len(part)):
+				out_2.write('%2d '%part[i])
+			out_2.write('\n')
+			
+			out_2.write('控制器放置位置\n')
+			for i in xrange(len(ctr_place)):
+				print out_2.write('%2d '%(2**level+i))
+			out_2.write('\n')
+			for i in xrange(len(ctr_place)):
+				out_2.write('%2d '%ctr_place[i])
+			out_2.write('\n')
+			out_2.write('各个分区花费代价\n')
+			for i in xrange(len(part_cost)):
+				print out_2.write('%2d '%part_cost[i])
+			out_2.write('\n')
+			print out_2.write('--------------------------------------------------------\n')
 			#if False:
 			if True:
 				print '各个分区交换机数量'
@@ -290,3 +322,4 @@ if __name__ == '__main__':
 					print '%2d '%part_cost[i],
 				print ''
 				print '--------------------------------------------------------'
+
