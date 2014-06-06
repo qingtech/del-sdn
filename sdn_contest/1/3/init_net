@@ -1,0 +1,47 @@
+#!/bin/bash
+dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+ifconfig | grep pc1 > /dev/null
+res=$?
+#echo $res
+if [ $res -eq 0 ]; then
+	echo pc1
+	#wireshark > /dev/null &
+	firefox > /dev/null &
+fi
+
+
+
+ifconfig | grep sv2 > /dev/null
+res=$?
+#echo $res
+if [ $res -eq 0 ]; then
+	echo sv2
+	ifconfig sv2-eth0:0 10.0.0.4 broadcast 10.0.0.4 netmask 255.255.255.255
+	route add -host 10.0.0.4 dev sv2-eth0:0
+	python -m $dir/SimpleHTTPServer_01 80 &
+	#wireshark > /dev/null &
+fi
+
+
+ifconfig | grep sv3 > /dev/null
+res=$?
+#echo $res
+if [ $res -eq 0 ]; then
+	echo sv3
+	ifconfig lo:0 10.0.0.4 broadcast 10.0.0.4 netmask 255.255.255.255
+	route add -host 10.0.0.4 dev lo:0
+	echo 1 > /proc/sys/net/ipv4/conf/lo/arp_ignore
+	echo 1 > /proc/sys/net/ipv4/conf/all/arp_ignore
+	echo 2 > /proc/sys/net/ipv4/conf/lo/arp_announce
+	echo 2 > /proc/sys/net/ipv4/conf/all/arp_announce
+	python -m $dir/SimpleHTTPServer_02 80 &
+	#wireshark > /dev/null &
+fi
+
+
+ifconfig | grep lo > /dev/null
+res=$?
+#echo $res
+if [ $res -eq 0 ]; then
+	echo lo
+fi
