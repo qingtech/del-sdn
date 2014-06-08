@@ -359,7 +359,7 @@ public class MyTopologyInstance2 extends TopologyInstance {
 			//System.out.println(Thread.currentThread()+": before getRoute pathcache.size::~~~~::::"+this.pathcache.size());
 //			System.out.println("+++++++++++++++++++++++++++++++++++++++++++++");
 //			System.out.println("befor pathcache.szie::::::"+this.pathcache.size());//3
-			//this.calculateShortestPathTreeInClusters();
+			this.calculateShortestPathTreeInClusters();
 			result = pathcache.get(id);
 //			System.out.println("after pathcache.szie::::::"+this.pathcache.size());//0
 //			System.out.println("_____________________________________________");
