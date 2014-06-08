@@ -1,7 +1,7 @@
 from mininet.topo import Topo
 from mininet.net import Mininet
 from mininet.link import TCLink
-from mininet.node import RemoteController,OVSSwitch
+from mininet.node import RemoteController,OVSSwitch,IVSSwitch,OVSLegacyKernelSwitch,UserSwitch
 from mininet.cli import CLI
 from mininet.log import setLogLevel
 
@@ -53,7 +53,8 @@ topos = { 'mytopo': ( lambda: MyTopo() ) }
 if __name__ == '__main__':
 	setLogLevel('info')
 	topo = MyTopo()
-	net = Mininet( topo = topo, switch=OVSSwitch, link=TCLink, build=False, autoSetMacs=True )
+	#OVSSwitch,IVSSwitch,OVSLegacyKernelSwitch,UserSwitch
+	net = Mininet( topo = topo, switch=IVSSwitch, link=TCLink, build=False, autoSetMacs=True )
 	c0 = RemoteController('c0', ip='127.0.0.1')
 	net.addController(c0)
 	net.build()
