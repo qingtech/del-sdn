@@ -22,22 +22,22 @@ public class MyFlowList {
 	private Map<RouteId, Integer> bw_need = new HashMap<RouteId, Integer>();
 	private MyFlowList(){
 		established_flows =  new HashMap<RouteId, List<NodePortTuple>>();
-		bw_need.put(new RouteId(1L,7L), 100);
-		bw_need.put(new RouteId(1L,7L), 100);
+		bw_need.put(new RouteId(1L,7L), 95);
+		bw_need.put(new RouteId(7L,1L), 80);
 		
 		//routeId eq link
 		int bw = 100;
-		linkBW.put(new RouteId(1L,3L), bw);
+		linkBW.put(new RouteId(1L,3L), 90);
 		linkBW.put(new RouteId(1L,4L), bw);
 		linkBW.put(new RouteId(2L,3L), bw);
 		linkBW.put(new RouteId(2L,4L), bw);
 		linkBW.put(new RouteId(3L,4L), bw);
-		linkBW.put(new RouteId(3L,5L), bw);
+		linkBW.put(new RouteId(3L,5L), 90);
 		linkBW.put(new RouteId(3L,6L), bw);
 		linkBW.put(new RouteId(4L,5L), bw);
 		linkBW.put(new RouteId(4L,6L), bw);
 		linkBW.put(new RouteId(5L,6L), bw);
-		linkBW.put(new RouteId(5L,7L), bw);
+		linkBW.put(new RouteId(5L,7L), 90);
 		linkBW.put(new RouteId(5L,8L), bw);
 		linkBW.put(new RouteId(6L,7L), bw);
 		linkBW.put(new RouteId(6L,8L), bw);
@@ -119,14 +119,14 @@ public class MyFlowList {
 					}
 					Integer bw = linkBW.get(l);
 					Integer need = bw_need.get(rid);
-					if(need == null){
-						need = bw_need.get(new RouteId(rid.getDst(),rid.getSrc()));
-					}
+//					if(need == null){
+//						need = bw_need.get(new RouteId(rid.getDst(),rid.getSrc()));
+//					}
 					if(bw!=null&&need!=null){
 						if(linkCost.containsKey(link)){
 							int b = this.getLinkCostByBW(bw, need);
 							int tmp = linkCost.get(link);
-							System.out.println("bw:"+bw+",need:"+need+"\n"+link+"\ntmp::::"+tmp+"\nb=="+b);
+							//System.out.println("bw:"+bw+",need:"+need+"\n"+link+"\ntmp::::"+tmp+"\nb=="+b);
 							linkCost.remove(link);
 							linkCost.put(link, tmp+b);
 						}else{
@@ -161,39 +161,38 @@ public class MyFlowList {
 	} 
 	public synchronized Map<Link, Integer> getTmpLinkCost(RouteId rid){
 		Map<Link, Integer> tmpLinkCost = new HashMap<Link, Integer>();
+		//System.out.println("linkCost.size::"+this.getLinkCost().size());
 			for (Link link : this.getLinkCost().keySet()) {
-				
+				//System.out.println(link);
 				Integer bw = linkBW.get(new RouteId(link.getSrc(),link.getDst()));
 				if(bw == null){
 					bw = linkBW.get(new RouteId(link.getDst(),link.getSrc()));
 				}
 				Integer need = bw_need.get(rid);
-				if(need == null){
-					need = bw_need.get(new RouteId(rid.getDst(),rid.getSrc()));
-				}
+//				if(need == null){
+//					need = bw_need.get(new RouteId(rid.getDst(),rid.getSrc()));
+//				}
 				if(bw!=null&&need!=null){
-					if(linkCost.containsKey(link)){
-						int tmp = linkCost.get(link) + this.getLinkCostByBW(bw, need);
-						tmpLinkCost.remove(link);
-						linkCost.put(link, tmp);
-					}else{
-						tmpLinkCost.put(link,1 + this.getLinkCostByBW(bw, need));
-					}
+					int tmp = linkCost.get(link) + this.getLinkCostByBW(bw, need);
+					//System.out.println("tmplink"+link+"\n:::tmp::"+tmp);
+					tmpLinkCost.put(link, tmp);
+					//System.out.println(linkCost.size());
+					
 				}else{
 					System.out.println("can not find bw an need get tmpLinkCost");
 					System.out.println("link:"+link);
 					System.out.println("rid:"+rid);
 				}
-				return tmpLinkCost;
+				
 			}
-		return null;
+		return tmpLinkCost;
 	} 
 	private synchronized Integer getLinkCostByBW(int bw, int need){
 		//System.out.println("bw:"+bw+",need:"+bw_need);
 		int r = 3;
 		if(bw < need){
-			System.out.println("bw < need");
-			System.out.println("!!!!bw:"+bw+",need:"+bw_need);
+//			System.out.println("bw < need");
+//			System.out.println("!!!!bw:"+bw+",need:"+bw_need);
 			r = 6;
 		}
 		return need*r/bw;
