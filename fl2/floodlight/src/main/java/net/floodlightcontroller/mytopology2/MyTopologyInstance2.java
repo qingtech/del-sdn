@@ -343,17 +343,22 @@ public class MyTopologyInstance2 extends TopologyInstance {
 				return new Route(rid,path);
 			}
 			Boolean isDstRooted = true;
-			Map<Link, Integer> linkCost = MyFlowList.getInstance().getLinkCost();
+			//Map<Link, Integer> linkCost = MyFlowList.getInstance().getLinkCost();
+			if(MyFlowList.getInstance().getLinkCost() == null 
+					||MyFlowList.getInstance().getEstablishedFlows().size()==0){
+				MyFlowList.getInstance().initLinkCost(switchPortLinks);
+			}
+			Map<Link, Integer> tmpLinkCost = MyFlowList.getInstance().getTmpLinkCost(rid);
 			Long root = dstId;
 			//defalut only one cluster
 			Cluster c = (Cluster) clusters.toArray()[0];
-			BroadcastTree bt = this.dijkstra(c, root, linkCost, isDstRooted);
+			BroadcastTree bt = this.dijkstra(c, root, tmpLinkCost, isDstRooted);
 			Long dst = dstId;
 			Long src = srcId;
 			Route my_result = null;
 			System.out.println("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
-			System.out.println("flow size:"+MyFlowList.getInstance().getEstablishedFlows().size());
-			System.out.println("linkCost size:"+MyFlowList.getInstance().getLinkCost().size());
+//			System.out.println("flow size:"+MyFlowList.getInstance().getEstablishedFlows().size());
+//			System.out.println("linkCost size:"+MyFlowList.getInstance().getLinkCost().size());
 			System.out.println("from "+src + " to "+dst+",cost:"+bt.getCosts().get(src));
 			System.out.print(src);
 			Link tmp_link = bt.getLinks().get(src);
