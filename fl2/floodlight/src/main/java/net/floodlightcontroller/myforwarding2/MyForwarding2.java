@@ -65,7 +65,6 @@ import org.slf4j.LoggerFactory;
 @LogMessageCategory("Flow Programming")
 public class MyForwarding2 extends ForwardingBase implements IFloodlightModule {
 	protected static Logger log = LoggerFactory.getLogger(MyForwarding2.class);
-	private RouteId new_rid;
 	@Override
 	@LogMessageDoc(level = "ERROR", message = "Unexpected decision made for this packet-in={}", explanation = "An unsupported PacketIn decision has been "
 			+ "passed to the flow programming component", recommendation = LogMessageDoc.REPORT_CONTROLLER_BUG)
@@ -168,8 +167,8 @@ public class MyForwarding2 extends ForwardingBase implements IFloodlightModule {
 		List<OFAction> actions = new ArrayList<OFAction>();
 		actions.add(action);
 
-		fm.setIdleTimeout(FLOWMOD_DEFAULT_IDLE_TIMEOUT)//FLOWMOD_DEFAULT_IDLE_TIMEOUT
-				.setHardTimeout(FLOWMOD_DEFAULT_HARD_TIMEOUT)//FLOWMOD_DEFAULT_HARD_TIMEOUT
+		fm.setIdleTimeout((short)3600)//FLOWMOD_DEFAULT_IDLE_TIMEOUT
+				.setHardTimeout((short)3600)//FLOWMOD_DEFAULT_HARD_TIMEOUT
 				.setBufferId(OFPacketOut.BUFFER_ID_NONE)
 				.setCookie(cookie)
 				.setCommand(flowModCommand)
@@ -180,17 +179,10 @@ public class MyForwarding2 extends ForwardingBase implements IFloodlightModule {
 								+ OFActionOutput.MINIMUM_LENGTH);
 
 		List<NodePortTuple> switchPortList = route.getPath();
-		//System.out.println(route.getPath());
-		//###################record new flow in MyFLowList#######
-		if(new_rid != null){
-			MyFlowList.getInstance().add(new_rid, switchPortList);
-			new_rid = null;
-		}else{
-			System.out.println("!!!!!!!!!!!!!!!!!!!!new_rid==null");
-		}
-		//#######################################################
+		
 		for (int indx = switchPortList.size() - 1; indx > 0; indx -= 2) {
 			// indx and indx-1 will always have the same switch DPID.
+			
 			long switchDPID = switchPortList.get(indx).getNodeId();
 			
 			IOFSwitch sw = floodlightProvider.getSwitch(switchDPID);
@@ -237,7 +229,10 @@ public class MyForwarding2 extends ForwardingBase implements IFloodlightModule {
 							+ "sw={} inPort={} outPort={}", new Object[] {
 							indx, sw, fm.getMatch().getInputPort(), outPort });
 				}
+				////////////////////////////////
 				messageDamper.write(sw, fm, cntx);
+				///////////////////////////////
+				
 				//System.out.println(fm);
 				if (doFlush) {
 					sw.flush();
@@ -261,13 +256,14 @@ public class MyForwarding2 extends ForwardingBase implements IFloodlightModule {
 				log.error("Failure cloning flow mod", e);
 			}
 		}
-
+			//################################################################################
 		return srcSwitchIncluded;
 	}
 
 	protected void doForwardFlow(IOFSwitch sw, OFPacketIn pi,
 			FloodlightContext cntx, boolean requestFlowRemovedNotifn) {
 		System.out.println("!!!!!!!!!!!!!!!!!!!!!!doForwardFlow");
+		System.out.println("switch:"+sw.getId());
 		OFMatch match = new OFMatch();
 		match.loadFromPacket(pi.getPacketData(), pi.getInPort());
 //		System.out.println("sw:::::"+sw);
@@ -358,10 +354,6 @@ public class MyForwarding2 extends ForwardingBase implements IFloodlightModule {
 				int srcVsDest = srcCluster.compareTo(dstCluster);
 				if (srcVsDest == 0) {
 					if (!srcDap.equals(dstDap)) {
-						//#########################################
-						new_rid = new RouteId(srcDap.getSwitchDPID(), dstDap.getSwitchDPID());
-						System.out.println("get new_rid!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-						//########################################
 						Route route = routingEngine.getRoute(
 								srcDap.getSwitchDPID(),
 								(short) srcDap.getPort(),
@@ -394,7 +386,7 @@ public class MyForwarding2 extends ForwardingBase implements IFloodlightModule {
 								wildcard_hints = ((Integer) sw
 										.getAttribute(IOFSwitch.PROP_FASTWILDCARDS))
 										.intValue()
-										& ~OFMatch.OFPFW_IN_PORT
+										//& ~OFMatch.OFPFW_IN_PORT
 										& ~OFMatch.OFPFW_DL_VLAN
 										& ~OFMatch.OFPFW_DL_SRC
 										& ~OFMatch.OFPFW_DL_DST

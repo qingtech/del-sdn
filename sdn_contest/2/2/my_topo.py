@@ -54,7 +54,7 @@ if __name__ == '__main__':
 	setLogLevel('info')
 	topo = MyTopo()
 	#OVSSwitch,IVSSwitch,OVSLegacyKernelSwitch,UserSwitch
-	net = Mininet( topo = topo, switch=IVSSwitch, link=TCLink, build=False, autoSetMacs=True )
+	net = Mininet( topo = topo, switch=OVSSwitch, link=TCLink, build=False, autoSetMacs=True )
 	c0 = RemoteController('c0', ip='127.0.0.1')
 	net.addController(c0)
 	net.build()

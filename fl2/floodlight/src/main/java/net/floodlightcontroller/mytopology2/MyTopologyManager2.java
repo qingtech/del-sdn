@@ -569,7 +569,7 @@ public class MyTopologyManager2 extends TopologyManager {
 				removeLinkFromStructure(openflowLinks, link);
 			}
 		}
-
+		System.out.println("intial instance!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
 		MyTopologyInstance2 nt = new MyTopologyInstance2(switchPorts,
 				blockedPorts, openflowLinks, broadcastDomainPorts, tunnelPorts);
 		nt.compute();
