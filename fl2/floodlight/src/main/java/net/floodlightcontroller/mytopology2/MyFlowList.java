@@ -18,8 +18,14 @@ public class MyFlowList {
 	private Map<RouteId, List<NodePortTuple>> established_flows =  null;
 	private Map<RouteId, List<NodePortTuple>> unestablished_flows =  null;
 	private Map<Link, Integer> linkCost = new HashMap<Link, Integer>();
+	private Map<Link, Integer> linkBW = new HashMap<Link, Integer>();
+	private Map<RouteId, Integer> bw_need = new HashMap<RouteId, Integer>();
 	private MyFlowList(){
 		established_flows =  new HashMap<RouteId, List<NodePortTuple>>();
+		bw_need.put(new RouteId(1L,7L), 100);
+		bw_need.put(new RouteId(1L,7L), 100);
+		
+		linkBW.put(new Link(), 100);
 	}
 //	private MyFlowList(Map<NodePortTuple, Set<Link>> switchPortLinks){
 //		established_flows =  new HashMap<RouteId, List<NodePortTuple>>();
