@@ -43,6 +43,7 @@ class MyTopo( Topo ):
 		self.addLink( sw['sw5'], sw['sw7'], bw=bw )
 		self.addLink( sw['sw5'], sw['sw8'], bw=bw )
 		self.addLink( sw['sw6'], sw['sw7'], bw=bw )
+		self.addLink( sw['sw6'], sw['sw8'], bw=bw )
 		
 		self.addLink( sw['sw1'], pc11, bw=bw )
 		self.addLink( sw['sw7'], sv12, bw=bw )

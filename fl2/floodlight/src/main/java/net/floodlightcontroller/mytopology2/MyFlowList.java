@@ -22,24 +22,24 @@ public class MyFlowList {
 	private Map<RouteId, Integer> bw_need = new HashMap<RouteId, Integer>();
 	private MyFlowList(){
 		established_flows =  new HashMap<RouteId, List<NodePortTuple>>();
-		bw_need.put(new RouteId(1L,7L), 95);
-		bw_need.put(new RouteId(7L,1L), 80);
+		bw_need.put(new RouteId(1L,7L), 85);
+		bw_need.put(new RouteId(7L,1L), 95);
 		
 		//routeId eq link
 		int bw = 100;
-		linkBW.put(new RouteId(1L,3L), 90);
-		linkBW.put(new RouteId(1L,4L), bw);
-		linkBW.put(new RouteId(2L,3L), bw);
-		linkBW.put(new RouteId(2L,4L), bw);
-		linkBW.put(new RouteId(3L,4L), bw);
-		linkBW.put(new RouteId(3L,5L), 90);
-		linkBW.put(new RouteId(3L,6L), bw);
-		linkBW.put(new RouteId(4L,5L), bw);
-		linkBW.put(new RouteId(4L,6L), bw);
-		linkBW.put(new RouteId(5L,6L), bw);
-		linkBW.put(new RouteId(5L,7L), 90);
-		linkBW.put(new RouteId(5L,8L), bw);
-		linkBW.put(new RouteId(6L,7L), bw);
+		linkBW.put(new RouteId(1L,3L), 90);////
+		linkBW.put(new RouteId(1L,4L), bw);////
+		linkBW.put(new RouteId(2L,3L), bw);////
+		linkBW.put(new RouteId(2L,4L), bw);////
+		linkBW.put(new RouteId(3L,4L), bw);////
+		linkBW.put(new RouteId(3L,5L), 90);////
+		linkBW.put(new RouteId(3L,6L), bw);////
+		linkBW.put(new RouteId(4L,5L), bw);////
+		linkBW.put(new RouteId(4L,6L), bw);////
+		linkBW.put(new RouteId(5L,6L), bw);////
+		linkBW.put(new RouteId(5L,7L), 90);////
+		linkBW.put(new RouteId(5L,8L), bw);////
+		linkBW.put(new RouteId(6L,7L), bw);////
 		linkBW.put(new RouteId(6L,8L), bw);
 	}
 //	private MyFlowList(Map<NodePortTuple, Set<Link>> switchPortLinks){
@@ -94,55 +94,58 @@ public class MyFlowList {
 //			}
 //		}
 //	}
-	public synchronized void add(RouteId rid, List<NodePortTuple> path,Map<NodePortTuple,
+	public void add(RouteId rid, List<NodePortTuple> path,Map<NodePortTuple,
             Set<Link>> switchPortLinks){
-		if(established_flows==null){
-			established_flows =  new HashMap<RouteId, List<NodePortTuple>>();
-		}
-		
-		if(!established_flows.containsKey(rid)){
-			established_flows.put(rid, path);
-			//fresh linkCost
-			for(int i=1;i<path.size();i+=2){
-				NodePortTuple npt = path.get(i);
-				//System.out.println("switch:"+npt.getNodeId());
-				Set<Link> links = switchPortLinks.get(npt);
-				if(links == null) continue;
-				for (Link link : links) {
-					if (link == null)
-						continue;
-					RouteId l; //represition link
-					if(link.getSrc()<link.getDst()){
-						l = new RouteId(link.getSrc(),link.getDst());
-					}else{
-						l = new RouteId(link.getDst(),link.getSrc());
-					}
-					Integer bw = linkBW.get(l);
-					Integer need = bw_need.get(rid);
-//					if(need == null){
-//						need = bw_need.get(new RouteId(rid.getDst(),rid.getSrc()));
-//					}
-					if(bw!=null&&need!=null){
-						if(linkCost.containsKey(link)){
-							int b = this.getLinkCostByBW(bw, need);
-							int tmp = linkCost.get(link);
-							//System.out.println("bw:"+bw+",need:"+need+"\n"+link+"\ntmp::::"+tmp+"\nb=="+b);
-							linkCost.remove(link);
-							linkCost.put(link, tmp+b);
+		synchronized(this){
+
+			if(established_flows==null){
+				established_flows =  new HashMap<RouteId, List<NodePortTuple>>();
+			}
+			
+			if(!established_flows.containsKey(rid)){
+				established_flows.put(rid, path);
+				//fresh linkCost
+				for(int i=1;i<path.size();i+=2){
+					NodePortTuple npt = path.get(i);
+					//System.out.println("switch:"+npt.getNodeId());
+					Set<Link> links = switchPortLinks.get(npt);
+					if(links == null) continue;
+					for (Link link : links) {
+						if (link == null)
+							continue;
+						RouteId l; //represition link
+						if(link.getSrc()<link.getDst()){
+							l = new RouteId(link.getSrc(),link.getDst());
 						}else{
-							linkCost.put(link,1 + this.getLinkCostByBW(bw, need));
+							l = new RouteId(link.getDst(),link.getSrc());
 						}
-						continue;
-					}
-					System.out.println("Can not fin bw an bw_need!!!!!!!!!");
-					System.out.println("l  :"+l);
-					System.out.println("rid:"+rid);
-					if(linkCost.containsKey(link)){
-						int tmp = linkCost.get(link);
-						linkCost.remove(link);
-						linkCost.put(link, tmp+1);
-					}else{
-						linkCost.put(link,2);
+						Integer bw = linkBW.get(l);
+						Integer need = bw_need.get(rid);
+//						if(need == null){
+//							need = bw_need.get(new RouteId(rid.getDst(),rid.getSrc()));
+//						}
+						if(bw!=null&&need!=null){
+							if(linkCost.containsKey(link)){
+								int b = this.getLinkCostByBW(bw, need);
+								int tmp = linkCost.get(link);
+								//System.out.println("bw:"+bw+",need:"+need+"\n"+link+"\ntmp::::"+tmp+"\nb=="+b);
+								linkCost.remove(link);
+								linkCost.put(link, tmp+b);
+							}else{
+								linkCost.put(link,1 + this.getLinkCostByBW(bw, need));
+							}
+							continue;
+						}
+						System.out.println("Can not fin bw an bw_need!!!!!!!!!");
+						System.out.println("l  :"+l);
+						System.out.println("rid:"+rid);
+						if(linkCost.containsKey(link)){
+							int tmp = linkCost.get(link);
+							linkCost.remove(link);
+							linkCost.put(link, tmp+1);
+						}else{
+							linkCost.put(link,2);
+						}
 					}
 				}
 			}
@@ -150,14 +153,17 @@ public class MyFlowList {
 	}
 	public synchronized void initLinkCost(Map<NodePortTuple,Set<Link>> switchPortLinks){
 		linkCost = new HashMap<Link, Integer>();
-		System.out.println("initLinkCost!!!!!!!!!!!!!!!!!");
+		//System.out.println("initLinkCost!!!!!!!!!!!!!!!!!");
+		//System.out.println("switchPortLinks.size()::"+switchPortLinks.size());
 		for ( NodePortTuple npt : switchPortLinks.keySet()) {
 			Set<Link> links = switchPortLinks.get(npt);
+			//System.out.println(npt);
 			for(Link link:links){
 				this.linkCost.put(link, 1);
 				//System.out.println(link);
 			}
 		}
+		//System.out.println("this.linkCost.size()::::"+this.linkCost.size());
 	} 
 	public synchronized Map<Link, Integer> getTmpLinkCost(RouteId rid){
 		Map<Link, Integer> tmpLinkCost = new HashMap<Link, Integer>();
@@ -198,7 +204,9 @@ public class MyFlowList {
 		return need*r/bw;
 	}
 	public Map<RouteId, List<NodePortTuple>> getEstablishedFlows(){
-		return established_flows;
+		synchronized(this){
+			return established_flows;
+		}
 	}
 	public Map<RouteId, List<NodePortTuple>> getUnestablished_flows() {
 		return unestablished_flows;

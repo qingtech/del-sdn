@@ -214,61 +214,61 @@ public class MyTopologyInstance2 extends TopologyInstance {
 	protected void calculateShortestPathTreeInClusters() {
 		System.out
 				.println("!!!!!!!!!!!!!!!!!!!!!!!!!!!!calculateShortestPathTreeInClusters");
-		//System.out.println("********************************************************");
-		//System.out.println("pathcache.size::::::"+this.pathcache.size());
-		//MyFlowList.getInstance(switchPortLinks);
+		// System.out.println("********************************************************");
+		// System.out.println("pathcache.size::::::"+this.pathcache.size());
+		// MyFlowList.getInstance(switchPortLinks);
 		pathcache.invalidateAll();
-		//System.out.println("!!!!!!!arter inval!!!!!!!pathcache.size::::::"+this.pathcache.size());
+		// System.out.println("!!!!!!!arter inval!!!!!!!pathcache.size::::::"+this.pathcache.size());
 		destinationRootedTrees.clear();
 
-		
-		//create linkCost-------------------------------------
-//		Map<Link, Integer> linkCost = new HashMap<Link, Integer>();
-//		int tunnel_weight = switchPorts.size() + 1;
-//
-//		for (NodePortTuple npt : tunnelPorts) {
-//			if (switchPortLinks.get(npt) == null)
-//				continue;
-//			for (Link link : switchPortLinks.get(npt)) {
-//				if (link == null)
-//					continue;
-//				linkCost.put(link, tunnel_weight);
-//			}
-//		}
-		///------------------------------------------------------
-		///#####################################################################
+		// create linkCost-------------------------------------
+		// Map<Link, Integer> linkCost = new HashMap<Link, Integer>();
+		// int tunnel_weight = switchPorts.size() + 1;
+		//
+		// for (NodePortTuple npt : tunnelPorts) {
+		// if (switchPortLinks.get(npt) == null)
+		// continue;
+		// for (Link link : switchPortLinks.get(npt)) {
+		// if (link == null)
+		// continue;
+		// linkCost.put(link, tunnel_weight);
+		// }
+		// }
+		// /------------------------------------------------------
+		// /#####################################################################
 		Map<Link, Integer> linkCost = MyFlowList.getInstance().getLinkCost();
-		///#####################################################################
+		// /#####################################################################
 		for (Cluster c : clusters) {
 			for (Long node : c.getLinks().keySet()) {
 				BroadcastTree tree = dijkstra(c, node, linkCost, true);
 				destinationRootedTrees.put(node, tree);
 			}
 		}
-		//################################################################################
-//		for(Long dst:destinationRootedTrees.keySet()){
-//			//Map<Long, BroadcastTree>
-//			System.out.println("dst:"+dst);
-//			BroadcastTree bt = destinationRootedTrees.get(dst);
-//			for(Long src:bt.getLinks().keySet()){
-//				System.out.println("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
-//				System.out.println("from "+src + " to "+dst+",cost:"+bt.getCosts().get(src));
-//				System.out.print(src);
-//				Link tmp_link = bt.getLinks().get(src);
-//				if(tmp_link == null) {
-//					System.out.println();
-//					continue;
-//				}
-//				Long tmp_dst = tmp_link.getDst();
-//				while(tmp_dst!=dst){
-//					System.out.print(">>"+tmp_dst);
-//					tmp_link = bt.getLinks().get(tmp_dst);
-//					tmp_dst = tmp_link.getDst();
-//				}
-//				System.out.println(">>"+dst);
-//			}
-//		}
-		//################################################################################
+		// ################################################################################
+		// for(Long dst:destinationRootedTrees.keySet()){
+		// //Map<Long, BroadcastTree>
+		// System.out.println("dst:"+dst);
+		// BroadcastTree bt = destinationRootedTrees.get(dst);
+		// for(Long src:bt.getLinks().keySet()){
+		// System.out.println("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
+		// System.out.println("from "+src +
+		// " to "+dst+",cost:"+bt.getCosts().get(src));
+		// System.out.print(src);
+		// Link tmp_link = bt.getLinks().get(src);
+		// if(tmp_link == null) {
+		// System.out.println();
+		// continue;
+		// }
+		// Long tmp_dst = tmp_link.getDst();
+		// while(tmp_dst!=dst){
+		// System.out.print(">>"+tmp_dst);
+		// tmp_link = bt.getLinks().get(tmp_dst);
+		// tmp_dst = tmp_link.getDst();
+		// }
+		// System.out.println(">>"+dst);
+		// }
+		// }
+		// ################################################################################
 	}
 
 	@Override
@@ -306,15 +306,16 @@ public class MyTopologyInstance2 extends TopologyInstance {
 			long dstId, short dstPort, long cookie) {
 		// Return null the route source and desitnation are the
 		// same switchports.
-		//------------------------replace by next part---------------------------------
-		if(false){
+		// ------------------------replace by next
+		// part---------------------------------
+		if (false) {
 			if (srcId == dstId && srcPort == dstPort)
 				return null;
 
 			List<NodePortTuple> nptList;
 			NodePortTuple npt;
 			Route r = getRoute(srcId, dstId, 0);
-			
+
 			if (r == null && srcId != dstId)
 				return null;
 
@@ -332,75 +333,89 @@ public class MyTopologyInstance2 extends TopologyInstance {
 			RouteId id = new RouteId(srcId, dstId);
 			r = new Route(id, nptList);
 			return r;
-			//----------------------------------------------------------------
-		}else{
-			//#######################################################################
-			if (srcId == dstId && srcPort == dstPort)
-				return null;
-			RouteId rid = new RouteId(srcId,dstId);
-			List<NodePortTuple> path = MyFlowList.getInstance().getEstablishedFlows().get(rid);
-			if(path!=null){
-				return new Route(rid,path);
-			}
-			Boolean isDstRooted = true;
-			//Map<Link, Integer> linkCost = MyFlowList.getInstance().getLinkCost();
-			if(MyFlowList.getInstance().getLinkCost() == null 
-					||MyFlowList.getInstance().getEstablishedFlows().size()==0){
-				MyFlowList.getInstance().initLinkCost(switchPortLinks);
-			}
-			Map<Link, Integer> tmpLinkCost = MyFlowList.getInstance().getTmpLinkCost(rid);
-			Long root = dstId;
-			//defalut only one cluster
-			Cluster c = (Cluster) clusters.toArray()[0];
-			BroadcastTree bt = this.dijkstra(c, root, tmpLinkCost, isDstRooted);
-			Long dst = dstId;
-			Long src = srcId;
-			Route my_result = null;
-			System.out.println("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
-//			System.out.println("flow size:"+MyFlowList.getInstance().getEstablishedFlows().size());
-//			System.out.println("linkCost size:"+MyFlowList.getInstance().getLinkCost().size());
-			System.out.println("from "+src + " to "+dst+",cost:"+bt.getCosts().get(src));
-			System.out.print(src);
-			Link tmp_link = bt.getLinks().get(src);
-			if(tmp_link == null) {
-				System.out.println();
-				//return my_result;
-			}else{
-				//my_result = new Route();
-				path = new ArrayList<NodePortTuple>();
-				NodePortTuple npt1 = new NodePortTuple(tmp_link.getSrc(),tmp_link.getSrcPort());
-				NodePortTuple npt2 = new NodePortTuple(tmp_link.getDst(),tmp_link.getDstPort());
-				path.add(npt1); path.add(npt2);
-				Long tmp_dst = tmp_link.getDst();
-				while(tmp_dst!=dst){
-					System.out.print(">>"+tmp_dst);
-					tmp_link = bt.getLinks().get(tmp_dst);
-					tmp_dst = tmp_link.getDst();
-					npt1 = new NodePortTuple(tmp_link.getSrc(),tmp_link.getSrcPort());
-					npt2 = new NodePortTuple(tmp_link.getDst(),tmp_link.getDstPort());
-					path.add(npt1); path.add(npt2);
+			// ----------------------------------------------------------------
+		} else {
+			synchronized (this) {
+				// #######################################################################
+				if (srcId == dstId && srcPort == dstPort)
+					return null;
+				RouteId rid = new RouteId(srcId, dstId);
+				List<NodePortTuple> path = MyFlowList.getInstance()
+						.getEstablishedFlows().get(rid);
+				if (path != null) {
+					return new Route(rid, path);
 				}
-				/////////////////
-				npt1 = new NodePortTuple(srcId, srcPort);
-				path.add(0, npt1); // add src port to the front
-				npt2 = new NodePortTuple(dstId, dstPort);
-				path.add(npt2); // add dst port to the end
-				/////////////////
-				my_result = new Route(new RouteId(srcId,dstId),path);
-				System.out.println(">>"+dst);
+				Boolean isDstRooted = true;
+				// Map<Link, Integer> linkCost =
+				// MyFlowList.getInstance().getLinkCost();
+				if (MyFlowList.getInstance().getLinkCost() == null
+						|| MyFlowList.getInstance().getEstablishedFlows()
+								.size() == 0) {
+					MyFlowList.getInstance().initLinkCost(switchPortLinks);
+				}
+				Map<Link, Integer> tmpLinkCost = MyFlowList.getInstance()
+						.getTmpLinkCost(rid);
+				Long root = dstId;
+				// defalut only one cluster
+				Cluster c = (Cluster) clusters.toArray()[0];
+				BroadcastTree bt = this.dijkstra(c, root, tmpLinkCost,
+						isDstRooted);
+				Long dst = dstId;
+				Long src = srcId;
+				Route my_result = null;
+				System.out
+						.println("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
+				// System.out.println("flow size:"+MyFlowList.getInstance().getEstablishedFlows().size());
+				// System.out.println("linkCost size:"+MyFlowList.getInstance().getLinkCost().size());
+				System.out.println("from " + src + " to " + dst + ",cost:"
+						+ bt.getCosts().get(src));
+				System.out.print(src);
+				Link tmp_link = bt.getLinks().get(src);
+				if (tmp_link == null) {
+					System.out.println();
+					// return my_result;
+				} else {
+					// my_result = new Route();
+					path = new ArrayList<NodePortTuple>();
+					NodePortTuple npt1 = new NodePortTuple(tmp_link.getSrc(),
+							tmp_link.getSrcPort());
+					NodePortTuple npt2 = new NodePortTuple(tmp_link.getDst(),
+							tmp_link.getDstPort());
+					path.add(npt1);
+					path.add(npt2);
+					Long tmp_dst = tmp_link.getDst();
+					while (tmp_dst != dst) {
+						System.out.print(">>" + tmp_dst);
+						tmp_link = bt.getLinks().get(tmp_dst);
+						tmp_dst = tmp_link.getDst();
+						npt1 = new NodePortTuple(tmp_link.getSrc(),
+								tmp_link.getSrcPort());
+						npt2 = new NodePortTuple(tmp_link.getDst(),
+								tmp_link.getDstPort());
+						path.add(npt1);
+						path.add(npt2);
+					}
+					// ///////////////
+					npt1 = new NodePortTuple(srcId, srcPort);
+					path.add(0, npt1); // add src port to the front
+					npt2 = new NodePortTuple(dstId, dstPort);
+					path.add(npt2); // add dst port to the end
+					// ///////////////
+					my_result = new Route(new RouteId(srcId, dstId), path);
+					System.out.println(">>" + dst);
+				}
+				// #################create new flow########################
+				RouteId new_rid = (my_result.getId());
+				// ###################record new flow in MyFLowList#######
+				MyFlowList.getInstance().add(new_rid, my_result.getPath(),
+						switchPortLinks);
+				// #######################################################
+				return my_result;
+				// System.out.println("myresult:"+my_result);
+				// System.out.println("r       :"+r);
 			}
-			//#################create new flow########################
-			RouteId new_rid = (my_result.getId());
-			//###################record new flow in MyFLowList#######
-			MyFlowList.getInstance().add(new_rid, my_result.getPath(),switchPortLinks);
-			//#######################################################
-			return my_result;
-//			System.out.println("myresult:"+my_result);
-//			System.out.println("r       :"+r);
 		}
-		
-		
-		
+
 	}
 
 	// NOTE: Return a null route if srcId equals dstId. The null route
@@ -414,27 +429,26 @@ public class MyTopologyInstance2 extends TopologyInstance {
 
 		RouteId id = new RouteId(srcId, dstId);
 		Route result = null;
-		
-		
+
 		try {
-			//System.out.println(Thread.currentThread()+": before getRoute pathcache.size::~~~~::::"+this.pathcache.size());
-//			System.out.println("+++++++++++++++++++++++++++++++++++++++++++++");
-//			System.out.println("befor pathcache.szie::::::"+this.pathcache.size());//3
-			//this.calculateShortestPathTreeInClusters();
+			// System.out.println(Thread.currentThread()+": before getRoute pathcache.size::~~~~::::"+this.pathcache.size());
+			// System.out.println("+++++++++++++++++++++++++++++++++++++++++++++");
+			// System.out.println("befor pathcache.szie::::::"+this.pathcache.size());//3
+			// this.calculateShortestPathTreeInClusters();
 			result = pathcache.get(id);
-//			System.out.println("after pathcache.szie::::::"+this.pathcache.size());//0
-//			System.out.println("_____________________________________________");
-			//System.out.println(Thread.currentThread()+": after getRoute pathcache.size:::~~~~:::"+this.pathcache.size());
+			// System.out.println("after pathcache.szie::::::"+this.pathcache.size());//0
+			// System.out.println("_____________________________________________");
+			// System.out.println(Thread.currentThread()+": after getRoute pathcache.size:::~~~~:::"+this.pathcache.size());
 		} catch (Exception e) {
-			
+
 			log.error("{}", e);
 		}
 
 		if (log.isTraceEnabled()) {
 			log.trace("getRoute: {} -> {}", id, result);
 		}
-		//System.out.println("!!!!!!!!!result:::" + result);
-		
+		// System.out.println("!!!!!!!!!result:::" + result);
+
 		return result;
 	}
 

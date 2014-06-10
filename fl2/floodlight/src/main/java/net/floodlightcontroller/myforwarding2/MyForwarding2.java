@@ -158,7 +158,7 @@ public class MyForwarding2 extends ForwardingBase implements IFloodlightModule {
 			Integer wildcard_hints, OFPacketIn pi, long pinSwitch, long cookie,
 			FloodlightContext cntx, boolean reqeustFlowRemovedNotifn,
 			boolean doFlush, short flowModCommand) {
-		System.out.println("!!!!!!!!!!!!!!!!!!!!!!pushRoute");
+		//System.out.println("!!!!!!!!!!!!!!!!!!!!!!pushRoute");
 		boolean srcSwitchIncluded = false;
 		OFFlowMod fm = (OFFlowMod) floodlightProvider.getOFMessageFactory()
 				.getMessage(OFType.FLOW_MOD);
@@ -262,8 +262,8 @@ public class MyForwarding2 extends ForwardingBase implements IFloodlightModule {
 
 	protected void doForwardFlow(IOFSwitch sw, OFPacketIn pi,
 			FloodlightContext cntx, boolean requestFlowRemovedNotifn) {
-		System.out.println("!!!!!!!!!!!!!!!!!!!!!!doForwardFlow");
-		System.out.println("switch:"+sw.getId());
+		//System.out.println("!!!!!!!!!!!!!!!!!!!!!!doForwardFlow");
+		//log.info("switch:{}",sw.getId());
 		OFMatch match = new OFMatch();
 		match.loadFromPacket(pi.getPacketData(), pi.getInPort());
 //		System.out.println("sw:::::"+sw);
@@ -410,6 +410,7 @@ public class MyForwarding2 extends ForwardingBase implements IFloodlightModule {
 			}
 		} else {
 			// Flood since we don't know the dst device
+			//System.out.println("!!!!!!!!!!!!!!!!!!!doForwardFlow-doFlood");
 			doFlood(sw, pi, cntx);
 		}
 	}
