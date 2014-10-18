@@ -14,7 +14,7 @@ ivl_arg_m = 'invalid argument'
 
 #功能：根据链路权重l_wei将中间路径建立请求添加到s_wei
 #输入：
-#s_wei：初始路径建立请求
+#s_wei：初始路径建立请求(似乎不需要该参数）
 #l_wei: 链路权重
 #输出：
 #s_wei2: 中间路径建立请求
@@ -168,8 +168,14 @@ def switch_partition_and_controller_deployment(net_topo_file_name,level):
 	part_s_wei   = [0]*pn
 	s_wei_2 = get_s_wei_2(s_wei, l_wei, partition)
 	edge_cut = 0
+	edge_not_cut = 0	#edge_not_cut = sum(l_wei) - edge_cut
 	for i in range(sn):
 		edge_cut += s_wei_2[i]
+	for i in xrange(sn):
+		for j in xrange(sn):
+			edge_not_cut += l_wei[i][j]
+	edge_not_cut -= edge_cut
+
 	ctr_place = [-1]*pn
 	part_cost = [0]*pn
 	for c_part_no in xrange(pn,pn*2):
@@ -222,8 +228,11 @@ def switch_partition_and_controller_deployment(net_topo_file_name,level):
 		print ''
 		print '割边数量：%d'%edge_cut
 	
-	return [partition,ctr_place,part_s_num,part_s_wei,edge_cut,part_cost]
+		#分区结果，控制器位置，区域交换机数量，区域负载(交换机总权重)，跨域流（割边），区域花费
+	return [partition,ctr_place,part_s_num,part_s_wei,edge_cut,edge_not_cut,part_cost]
 if __name__ == '__main__':
+	#输入：网络拓扑矩阵，流量矩阵，划分区域数，(链路延迟）
+	#输出：区域负载，域内流数量，跨域流（割边）数量,分区结果，(控制器放置)
 	max = 10000
 	"""
 		    (1)(2)(1)
@@ -255,10 +264,15 @@ if __name__ == '__main__':
 			part_s_num = res[2]
 			part_s_wei = res[3]
 			edge_cut = res[4]
-			part_cost = res[5]
+			edge_not_cut = res[5]
+			part_cost = res[6]
+			#交换机数量为nn[k],分区数量为pn
+			#[nn[k],pn],例如：[33,2]
 			out_1.write('[%s-%d]\n'%(nn[k],pn))
 			out_2.write('[%s-%d]\n'%(nn[k],pn))
 			for i in xrange(pn,2*pn):
+				#列出分区编号为i的所有交换机，后一个为控制器所在的交换机位置
+				#例如：1,2,3,1 该分区有交换机1,2,3并且控制器与交换机1直接相连
 				for j in xrange(len(part)):
 					if part[j] == i:
 						out_1.write('%d,'%j)
@@ -275,7 +289,10 @@ if __name__ == '__main__':
 			for i in xrange(len(part_s_wei)):
 				out_2.write('%2d '%part_s_wei[i])
 			out_2.write('\n')
-			out_2.write('割边数量：%d\n'%edge_cut)
+			#割边数量，即跨域流数量
+			out_2.write('跨域流（割边）数量：%d\n'%edge_cut)
+			#域内流数量
+			out_2.write('域内流数量：%d\n'%edge_not_cut)
 
 			out_2.write('交换机分区情况\n')
 			for i in xrange(len(part)):
@@ -284,18 +301,20 @@ if __name__ == '__main__':
 			
 			out_2.write('控制器放置位置\n')
 			for i in xrange(len(ctr_place)):
-				print out_2.write('%2d '%(2**level+i))
+				out_2.write('%2d '%(2**level+i))
 			out_2.write('\n')
 			for i in xrange(len(ctr_place)):
 				out_2.write('%2d '%ctr_place[i])
 			out_2.write('\n')
 			out_2.write('各个分区花费代价\n')
 			for i in xrange(len(part_cost)):
-				print out_2.write('%2d '%part_cost[i])
+				out_2.write('%2d '%part_cost[i])
 			out_2.write('\n')
-			print out_2.write('--------------------------------------------------------\n')
+			out_2.write('--------------------------------------------------------\n')
+			#是否打印在控制台上
 			#if False:
 			if True:
+				print '-------------------------[%s-%d]-------------------------------\n'%(nn[k],pn)
 				print '各个分区交换机数量'
 				for i in xrange(len(part_s_num)):
 					print '%2d '%part_s_num[i],
@@ -304,7 +323,8 @@ if __name__ == '__main__':
 				for i in xrange(len(part_s_wei)):
 					print '%2d '%part_s_wei[i],
 				print ''
-				print '割边数量：%d'%edge_cut
+				print '跨域流（割边）数量：%d'%edge_cut
+				print '域内流数量：%d'%edge_not_cut
 
 				print '交换机分区情况'
 				for i in xrange(len(part)):
@@ -321,5 +341,4 @@ if __name__ == '__main__':
 				for i in xrange(len(part_cost)):
 					print '%2d '%part_cost[i],
 				print ''
-				print '--------------------------------------------------------'
 
