@@ -231,7 +231,7 @@ def switch_partition_and_controller_deployment(net_topo_file_name,level):
 		#分区结果，控制器位置，区域交换机数量，区域负载(交换机总权重)，跨域流（割边），区域花费
 	return [partition,ctr_place,part_s_num,part_s_wei,edge_cut,edge_not_cut,part_cost]
 if __name__ == '__main__':
-	#输入：网络拓扑矩阵，流量矩阵，划分区域数，(链路延迟）
+	#输入：网络拓扑矩阵file，网络流量矩阵file，划分区域数，(链路延迟）
 	#输出：区域负载，域内流数量，跨域流（割边）数量,分区结果，(控制器放置)
 	max = 10000
 	"""
