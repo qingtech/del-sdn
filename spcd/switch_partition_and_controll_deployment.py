@@ -250,11 +250,18 @@ if __name__ == '__main__':
 		print 'i=%d'%i
 		print 'switch partition and controller placement:'
 	fn = ['33sw.txt','50sw.txt','100sw.txt']
+	topo = ['33sw','50sw','100sw']
 	nn = ['33','50','100']
 	output_file_name_1 = 'output.txt'
 	output_file_name_2 = 'output_2.txt'
+	load_file_name = 'load.txt'
+	traffic_file_name = 'traffic.txt'
 	out_1 = open(output_file_name_1,'w')
 	out_2 = open(output_file_name_2,'w')
+	output_load = open(load_file_name,'w')
+	output_load.write('algs\ttopo\tkway\tpart\tscount\tload\n')
+	output_traffic = open(traffic_file_name,'w')
+	output_traffic.write('algs\ttopo\tkway\ttraffic\n')
 	for k in xrange(3):
 		for level in xrange(1,6):
 			res = switch_partition_and_controller_deployment(fn[k],level)
@@ -288,9 +295,11 @@ if __name__ == '__main__':
 			out_2.write('各个分区的交换机权重总和\n')
 			for i in xrange(len(part_s_wei)):
 				out_2.write('%2d '%part_s_wei[i])
+				output_load.write('mlkp\t%s\t%d\t%d\t%d\t%d\n'%(topo[k],pn,(i+1),part_s_num[i],part_s_wei[i]))
 			out_2.write('\n')
 			#割边数量，即跨域流数量
 			out_2.write('跨域流（割边）数量：%d\n'%edge_cut)
+			output_traffic.write('mlkp\t%s\t%d\t%d\n'%(topo[k],pn,edge_cut))
 			#域内流数量
 			out_2.write('域内流数量：%d\n'%edge_not_cut)
 
