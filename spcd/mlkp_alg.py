@@ -64,6 +64,7 @@ def switch_partition_and_controller_deployment(level):
 	l_wei = gv.l_wei
 	l_lan = gv.l_lan
 	gv.level = level
+	pn = 2**level #分区数
 
 	sn = len(s_wei)
 
@@ -80,8 +81,14 @@ def switch_partition_and_controller_deployment(level):
 	s_wei_2 = get_s_wei_2(l_wei, partition)
 	#获取part_no
 	part_no = {}
-	for i in range(sn):
-		part_no[partition[i]] = partition[i]
+	#无法保证分区数量为pn
+	#for i in range(sn):
+	#	part_no[partition[i]] = partition[i]
+	####################
+	#修改如下
+	for i in xrange(pn):
+		part_no[i+pn] = i+pn
+	###################
 
 	ctr_place = {}
 	part_cost = {} 

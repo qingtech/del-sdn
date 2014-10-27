@@ -77,9 +77,22 @@ def get_res(s_wei, l_wei, l_lan, partition, ctr_place):
 	sn = len(s_wei)
 	part_s_num = {}
 	part_s_wei   = {}
+	#获取part_no
+	part_no = {}
+	#无法保证分区数量为pn
+	#for i in range(sn):
+	#	part_no[partition[i]] = partition[i]
+	####################
+	part_cost = {}
+	#修改如下
+	for i in ctr_place.keys():
+		part_no[i] = i
+	###################
+
 	s_wei_2 = get_s_wei_2(l_wei, partition)
 	edge_cut = 0
 	edge_not_cut = 0	#edge_not_cut = sum(l_wei) - edge_cut
+
 	for i in range(sn):
 		edge_cut += s_wei_2[i]
 	for i in xrange(sn):
@@ -87,18 +100,14 @@ def get_res(s_wei, l_wei, l_lan, partition, ctr_place):
 			edge_not_cut += l_wei[i][j]
 	edge_not_cut -= edge_cut
 
-	for i in range(sn):
-		part_s_num[partition[i]] = 0
-		part_s_wei[partition[i]] = 0
+	for pno in part_no:
+		part_s_num[pno] = 0
+		part_s_wei[pno] = 0
 	for i in range(sn):
 		part_s_num[partition[i]] += 1
 		part_s_wei[partition[i]] += s_wei[i] + s_wei_2[i]
 
-	#获取part_no
-	part_no = {}
-	for i in range(sn):
-		part_no[partition[i]] = partition[i]
-	part_cost = {}
+
 	
 	'''
 	for c_part_no in part_no.keys():
