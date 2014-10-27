@@ -2,9 +2,8 @@ import sys
 class MyPriorityQueue(object):
 	
 	def __init__(self, max_size):
-		if max_size <=0:
-			print 'invalid parameter, max_size = %d'%max_size
-			return
+		assert max_size > 0
+
 		self.max_size = max_size
 		self.queue = [0]*max_size
 		self.priority = [0]*max_size

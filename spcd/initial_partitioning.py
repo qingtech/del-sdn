@@ -1,50 +1,20 @@
 #encoding:utf-8
 import gv
-import load_topo
 import sys
-import error
 import random
 import copy
 from my_priority_queue import MyPriorityQueue
-frame = sys._getframe()
-filename = sys._getframe().f_code.co_filename
-name = sys._getframe().f_code.co_name
-not_arg_m = 'not argument'
-not_eno_m = 'not enough argument'
-ivl_arg_m = 'invalid argument'
+from load_network import load_topo
+from tool import get_s_wei_2,get_child_network
 debug = False 
+
 #功能：得到左右分区权重差因子
 #输入：左分区交换机总权重lc_sum_sw，右分区交换机总权重rc_sum_sw
 #输出：
 #左右分区权重差因子
 def get_partition_factor(lc_sum_sw, rc_sum_sw):
 	return abs(lc_sum_sw - rc_sum_sw)*1.0/(lc_sum_sw + rc_sum_sw)
-#功能：根据链路权重l_wei将中间路径建立请求添加到s_wei
-#输入：
-#s_wei：初始路径建立请求
-#l_wei: 链路权重
-#输出：
-#s_wei2: 中间路径建立请求
-def get_s_wei_2(s_wei, l_wei, part):
-	sn = len(s_wei)
-	#数据合法性检验
-	if sn < 0:
-		error.report(filename, name, frame.f_lineno, ivl_arg_m)
-	if len(l_wei) != sn:
-		error.report(filename, name, frame.f_lineno, ivl_arg_m)
-	for i in range(sn):
-		if len(l_wei[i]) != sn:
-			error.report(filename, name, frame.f_lineno, ivl_arg_m)
-	if len(part) != sn:
-		error.report(filename, name, frame.f_lineno, ivl_arg_m)
-	#算法开始
-	s_wei_2 = [0]*sn
-	for i in range(sn-1):
-		for j in range(i+1,sn):
-			if part[i] != part[j]:
-				s_wei_2[i] += l_wei[j][i]
-				s_wei_2[j] += l_wei[i][j]
-	return s_wei_2
+
 #功能：求出权重数组s_wei[]的总和。
 #输入：s_wei[]
 #输出：sum_s_wei
@@ -66,15 +36,12 @@ def get_sum_s_wei_by_part(s_wei, part, part_no):
 def get_gain(index,src_part_no,dst_part_no,part,s_wei,l_wei,sum_sw,src_pq = None,dst_pq = None,gain = None,gain_2 = None,check = None):
 	sn = len(s_wei)
 	#数据合法性检验
-	if sn < 0:
-		error.report(filename, name, frame.f_lineno, ivl_arg_m)
-	if len(l_wei) != sn:
-		error.report(filename, name, frame.f_lineno, ivl_arg_m)
+	assert sn > 0
+	assert len(l_wei) == sn
 	for i in range(sn):
-		if len(l_wei[i]) != sn:
-			error.report(filename, name, frame.f_lineno, ivl_arg_m)
-	if len(part) != sn:
-		error.report(filename, name, frame.f_lineno, ivl_arg_m)
+		assert len(l_wei[i]) == sn
+	assert len(part) == sn
+
 	#算法开始	
 
 	src_sw_1 = sum_sw[0]
@@ -141,21 +108,19 @@ def get_gain(index,src_part_no,dst_part_no,part,s_wei,l_wei,sum_sw,src_pq = None
 	res = [src_sw_1,src_sw_2,dst_sw_1,dst_sw_2,src_sum_sw,dst_sum_sw,part_factor]
 	return res
 	################################################################
+'''
 #功能：获得分区号为c_part_no的分区子网络
 #输入：s_swei[],s_wei_2[],l_wei[][],part,c_part_no
 #输出：分区子网络_net_topo[c_s_wei[],c_l_wei[]],对应父网络的交换机编号c_index[]
 def get_child_network(s_wei,s_wei_2,l_wei,part,c_part_no):
 	sn = len(s_wei)
 	#数据合法性检验
-	if sn < 0:
-		error.report(filename, name, frame.f_lineno, ivl_arg_m)
-	if len(l_wei) != sn:
-		error.report(filename, name, frame.f_lineno, ivl_arg_m)
+	assert sn > 0
+	assert len(l_wei) == sn
 	for i in range(sn):
-		if len(l_wei[i]) != sn:
-			error.report(filename, name, frame.f_lineno, ivl_arg_m)
-	if len(part) != sn:
-		error.report(filename, name, frame.f_lineno, ivl_arg_m)
+		assert len(l_wei[i]) == sn
+	assert len(part) == sn
+
 	#算法开始	
 
 	#统计分区交换机个数
@@ -167,10 +132,10 @@ def get_child_network(s_wei,s_wei_2,l_wei,part,c_part_no):
 	c_index = [0]*c_s_num
 	c_s_wei = [0]*c_s_num
 	c_l_wei = [[0 for col in xrange(c_s_num)] for row in xrange(c_s_num)]
-	'''
-	what a f*cking bug 囧。。。。。
-	c_l_wei = [[0]*c_s_num]*c_s_num
-	'''
+
+	#what a f*cking bug 囧。。。。。
+	#c_l_wei = [[0]*c_s_num]*c_s_num
+
 	#index,s_wei
 	ii = 0
 	for i in xrange(sn):
@@ -187,6 +152,7 @@ def get_child_network(s_wei,s_wei_2,l_wei,part,c_part_no):
 			c_l_wei[i][j] = l_wei[ii][jj]
 	res = [c_s_wei,c_l_wei,c_index]
 	return res
+'''
 
 #功能：将父分区根据交换机权重划分为总权重大致相等的两个子分区
 #输入：
@@ -221,7 +187,7 @@ def randomly_get_bipartition(s_wei, l_wei, lc_part_no, rc_part_no):
 				tmp_part[i] = rc_part_no
 				rsw += s_wei[i]
 		#将中间路径请求（跨域流）添加到lsw和rsw
-		tmp_s_wei_2 = get_s_wei_2(s_wei, l_wei, tmp_part)
+		tmp_s_wei_2 = get_s_wei_2(l_wei, tmp_part)
 		for i in range(sn):
 			if tmp_part[i] == lc_part_no:
 				rsw += tmp_s_wei_2[i]
@@ -263,15 +229,12 @@ def randomly_get_bipartition(s_wei, l_wei, lc_part_no, rc_part_no):
 def kernighan_lin_algorithm(s_wei, l_wei, part, lc_part_no, rc_part_no):
 	sn = len(s_wei)
 	#数据合法性检验
-	if sn < 0:
-		error.report(filename, name, frame.f_lineno, ivl_arg_m)
-	if len(l_wei) != sn:
-		error.report(filename, name, frame.f_lineno, ivl_arg_m)
+	assert sn > 0
+	assert len(l_wei) == sn
 	for i in range(sn):
-		if len(l_wei[i]) != sn:
-			error.report(filename, name, frame.f_lineno, ivl_arg_m)
-	if len(part) != sn:
-		error.report(filename, name, frame.f_lineno, ivl_arg_m)
+		assert len(l_wei[i]) == sn
+	assert len(part) == sn
+
 	#算法开始	
 	max = sys.maxint/2 
 	gain = [0]*sn
@@ -283,7 +246,7 @@ def kernighan_lin_algorithm(s_wei, l_wei, part, lc_part_no, rc_part_no):
 	#初始化gain[]
 	#计算交换机权重
 	#初始路径&中间路径建立请求
-	s_wei_2 = get_s_wei_2(s_wei, l_wei, part)
+	s_wei_2 = get_s_wei_2(l_wei, part)
 	lc_sw_1 = get_sum_s_wei_by_part(s_wei, part, lc_part_no)
 	rc_sw_1 = get_sum_s_wei_by_part(s_wei, part, rc_part_no)
 	lc_sw_2 = get_sum_s_wei_by_part(s_wei_2, part, lc_part_no)
@@ -346,7 +309,7 @@ def kernighan_lin_algorithm(s_wei, l_wei, part, lc_part_no, rc_part_no):
 		else:
 			part[index] = lc_part_no
 
-		tmp_s_wei_2 = get_s_wei_2(s_wei, l_wei, part)
+		tmp_s_wei_2 = get_s_wei_2(l_wei, part)
 		tmp_lc_sum_sw = get_sum_s_wei_by_part(s_wei, part, lc_part_no) + get_sum_s_wei_by_part(tmp_s_wei_2, part, lc_part_no)
 		tmp_rc_sum_sw = get_sum_s_wei_by_part(s_wei, part, rc_part_no) + get_sum_s_wei_by_part(tmp_s_wei_2, part, rc_part_no)
 		#将交换机index转回到原分区
@@ -421,7 +384,7 @@ def kernighan_lin_algorithm(s_wei, l_wei, part, lc_part_no, rc_part_no):
 			part[j] = lc_part_no
 	if debug:
 	#if True:
-		s_wei_2 = get_s_wei_2(s_wei, l_wei, part)
+		s_wei_2 = get_s_wei_2(l_wei, part)
 		lc_sum_sw = rc_sum_sw = 0
 		tmp_edge_cut = 0
 		lsn = rsn = 0
@@ -446,19 +409,17 @@ def kernighan_lin_algorithm(s_wei, l_wei, part, lc_part_no, rc_part_no):
 #l_wei[sn][sn]代表链路权重
 #level代表当传划分的层次,从第0层开始
 #part_no代表当前分区号
-def initial_partition(s_wei,l_wei,level,part_no):
+def initial_partition(s_wei, l_wei, l_lan, level, part_no):
 	#数据合法性检验
-	if level < 0 or level > gv.level:
-		error.report(filename, name, frame.f_lineno, ivl_arg_m)
+	assert level >= 0 and level <= gv.level
 		
 	sn = len(s_wei)
-	if sn < 0:
-		error.report(filename, name, frame.f_lineno, ivl_arg_m)
-	if len(l_wei) != sn:
-		error.report(filename, name, frame.f_lineno, ivl_arg_m)
+
+	assert sn > 0
+	assert len(l_wei) == sn
 	for i in range(sn):
-		if len(l_wei[i]) != sn:
-			error.report(filename, name, frame.f_lineno, ivl_arg_m)
+		assert len(l_wei[i]) == sn
+
 	part = [part_no]*sn
 	#最后一层，无需再划分
 	if level == gv.level:
@@ -512,7 +473,7 @@ def initial_partition(s_wei,l_wei,level,part_no):
 		#微调左右part
 		tmp_part = kernighan_lin_algorithm(s_wei, l_wei, tmp_part, lc_part_no, rc_part_no)
 		tmp_edge_cut = 0
-		tmp_s_wei_2 = get_s_wei_2(s_wei, l_wei, tmp_part)
+		tmp_s_wei_2 = get_s_wei_2(l_wei, tmp_part)
 		for j in range(sn):
 			tmp_edge_cut += tmp_s_wei_2[j]
 		'''
@@ -575,21 +536,23 @@ def initial_partition(s_wei,l_wei,level,part_no):
 			rc_l_wei[i][j] = l_wei[ii][jj]
 	'''
 	#####################
-	lc_net = get_child_network(s_wei,s_wei_2,l_wei,part,lc_part_no)
+	lc_net = get_child_network(s_wei, s_wei_2, l_wei,l_lan, part, lc_part_no)
 	lc_s_wei = lc_net[0]
 	lc_l_wei = lc_net[1]
-	lc_index = lc_net[2]
-	rc_net = get_child_network(s_wei,s_wei_2,l_wei,part,rc_part_no)
+	lc_l_lan = lc_net[2]
+	lc_index = lc_net[3]
+	rc_net = get_child_network(s_wei, s_wei_2, l_wei, l_lan, part, rc_part_no)
 	rc_s_wei = rc_net[0]
 	rc_l_wei = rc_net[1]
-	rc_index = rc_net[2]
+	rc_l_lan = rc_net[2]
+	rc_index = rc_net[3]
 	####################
-	part_0 = initial_partition(lc_s_wei,lc_l_wei,level+1, lc_part_no)
+	part_0 = initial_partition(lc_s_wei, lc_l_wei, lc_l_lan, level+1, lc_part_no)
 	#print 'part.len=%d,part_0.len=%d'%(len(part),len(part_0))
 	for i in range(len(lc_s_wei)):
 		part[lc_index[i]] = part_0[i]
 		#s_wei[lc_index[i]] = lc_s_wei[i]
-	part_1 = initial_partition(rc_s_wei,rc_l_wei,level+1, rc_part_no)
+	part_1 = initial_partition(rc_s_wei, rc_l_wei, rc_l_lan, level+1, rc_part_no)
 	for i in range(len(rc_s_wei)):
 		part[rc_index[i]] = part_1[i]
 		#s_wei[rc_index[i]] = rc_s_wei[i]
@@ -600,7 +563,7 @@ if __name__ == '__main__':
 	#l_wei = [[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1] for row in range(sn)]
 	max = sys.maxint
 	gv.net_topo_file_name = 'os3e.txt'
-	load_topo.load_topo()
+	load_topo()
 	sn = gv.s_num
 	s_wei = [1]*sn
 	l_wei = copy.deepcopy(gv.net_topo)
@@ -609,11 +572,11 @@ if __name__ == '__main__':
 		for j in range(sn):
 			if l_wei[i][j] == 0:
 				l_lan[i][j] = max
-	partition = initial_partition(s_wei, l_wei, 0, 1)
+	partition = initial_partition(s_wei, l_wei, l_lan, 0, 1)
 	pn = 2**gv.level
 	part_s_num = [0]*pn
 	part_s_wei   = [0]*pn
-	s_wei_2 = get_s_wei_2(s_wei, l_wei, partition)
+	s_wei_2 = get_s_wei_2(l_wei, partition)
 	print 'switch weight'
 	for i in range(sn):
 		print '%2d '%s_wei[i],
