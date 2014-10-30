@@ -6,15 +6,16 @@ import random_alg
 import greedy_alg
 import tool
 from load_network import load_topo
+from network import Network
 
 if __name__=='__main__':
 
 	max_int = 10000
 	#输入
-	net_topo_file_names = ['33sw.txt','50sw.txt','100sw.txt']
+	topo_file_name_list = ['33sw.txt','50sw.txt','100sw.txt']
 	topo = ['33sw','50sw','100sw']
 	nn = ['33','50','100']
-	flow_file_names = ['33sw_flow.txt','50sw_flow.txt','100sw_flow.txt']
+	flow_file_name_list = ['33sw_flow.txt','50sw_flow.txt','100sw_flow.txt']
 
 	
 	#输出
@@ -29,11 +30,13 @@ if __name__=='__main__':
 
 	for k in xrange(3):
 		#设置输入：网络拓扑,流矩阵,分区层数
-		gv.net_topo_file_name = net_topo_file_names[k]
-		gv.flow_file_name = flow_file_names[k]
+		gv.net_topo_file_name = topo_file_name_list[k]
+		gv.flow_file_name = flow_file_name_list[k]
 		load_topo()
 
 		sn = gv.s_num
+		
+		
 		s_wei = [1]*sn
 		l_wei = copy.deepcopy(gv.net_topo)
 		l_lan = copy.deepcopy(gv.net_topo)
@@ -50,6 +53,31 @@ if __name__=='__main__':
 		gv.s_wei = s_wei
 		gv.l_wei = l_wei
 		gv.l_lan = l_lan
+
+		####################
+		network = Network(topo_file_name_list[k])
+		gv.s_sum = network.sn
+		gv.net_topo = network.topo
+		gv.s_wei = network.s_wei
+		gv.l_wei = network.l_wei
+		gv.l_lan = network.path_cost
+		s_wei = network.s_wei
+		l_wei = network.l_wei
+		l_lan = network.path_cost
+		###################
+		print '-----------s_wei----------------------------'
+		for i in xrange(sn):
+			print '%d:%d\t'%(i,s_wei[i]),
+		print ''
+		'''
+		print '-----------l_wei----------------------------'
+		for i in xrange(sn):
+			for j in xrange(sn):
+				print '(%d-> %d):%d\t'%(i,j,l_wei[i][j]),
+		print ''
+		'''
+
+
 
 		#算法开始
 		for level in xrange(1,6):

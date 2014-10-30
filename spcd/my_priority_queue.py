@@ -80,6 +80,7 @@ class MyPriorityQueue(object):
 		self.size -= 1
 		return res
 if __name__ == '__main__':
+	#pq = MyPriorityQueue()
 	pq = MyPriorityQueue(-12)
 	pq = MyPriorityQueue(3)
 	print 'pq.empty():%d'%pq.empty()

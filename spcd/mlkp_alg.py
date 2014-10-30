@@ -154,14 +154,6 @@ if __name__ == '__main__':
 	output_traffic = open(traffic_file_name,'w')
 	output_traffic.write('algs\ttopo\tkway\ttraffic\n')
 
-	##############reomve after function get_res() with no bugs#################
-	load_file_name_b = 'load_b.txt'
-	traffic_file_name_b = 'traffic_b.txt'
-	output_load_b = open(load_file_name_b,'w')
-	output_load_b.write('algs\ttopo\tkway\tpart\tscount\tload\n')
-	output_traffic_b = open(traffic_file_name_b,'w')
-	output_traffic_b.write('algs\ttopo\tkway\ttraffic\n')
-	##############reomve after function get_res() with no bugs#################
 
 	for k in xrange(3):
 		#设置输入：网络拓扑,流矩阵,分区层数
@@ -189,26 +181,18 @@ if __name__ == '__main__':
 
 		#算法开始
 		for level in xrange(1,6):
-			#res = switch_partition_and_controller_deployment(net_topo_file_names[k],flow_file_names[k],level)
 			res = switch_partition_and_controller_deployment(level)
 			pn = 2**level
 			part = res[0]
 			ctr_place = res[1]
 			part_cost = res[2]
 
-			##############reomve after function get_res() with no bugs#################
 			res_b = get_res(s_wei, l_wei, l_lan, part,ctr_place)
-			part_s_num_b = res_b[0]
-			part_s_wei_b = res_b[1]
 			part_s_num = res_b[0]
 			part_s_wei = res_b[1]
 			edge_cut = res_b[2]
 			edge_cut_b = res_b[2]
 
-			for pno in part_s_wei_b.keys():
-				output_load_b.write('mlkp\t%s\t%d\t%d\t%d\t%d\n'%(topo[k],pn,pno,part_s_num_b[pno],part_s_wei_b[pno]))
-			output_traffic_b.write('mlkp\t%s\t%d\t%d\n'%(topo[k],pn,edge_cut_b))
-			##############reomve after function get_res() with no bugs#################
 			#交换机数量为nn[k],分区数量为pn
 			#[nn[k],pn],例如：[33,2]
 			out_1.write('[%s-%d]\n'%(nn[k],pn))
