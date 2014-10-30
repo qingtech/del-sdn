@@ -3,6 +3,7 @@ import copy
 import gv
 import mlkp_alg
 import random_alg
+import greedy_alg
 import tool
 from load_network import load_topo
 
@@ -90,7 +91,7 @@ if __name__=='__main__':
 			output_traffic.write('random\t%s\t%d\t%d\n'%(topo[k],pn,edge_cut))
 			#random end
 			#greedy begin
-			res = mlkp_alg.switch_partition_and_controller_deployment(level)
+			res = greedy_alg.switch_partition_and_controller_deployment(pn)
 			part = res[0]
 			ctr_place = res[1]
 			part_cost = res[2]

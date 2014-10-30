@@ -7,62 +7,7 @@ from load_network import load_topo
 import initial_partitioning
 from tool import get_s_wei_2,get_child_network,get_res
 
-def random_partition(sn, pn):
-	partition = [0]*sn
 
-	for i in xrange(sn):
-		partition[i] = random.randint(1,pn)
-
-	return partition
-
-#功能；在所有交换机中选取一个交换机与控制器直接相连，使得控制器与交换机的通讯总体花费最少
-#输入：
-#s_wei[i]表示交换机i需要与交换机进行通讯（包括流建立请求和转发规则下发）的次数
-#l_lan[i][j]表示该链路的“距离”，交换机与控制器的通讯总是走“距离”最短的路径，使用Floyd算法得到
-#输出：
-#i：与控制器直接相连的交换机
-def controller_deployment(s_wei,l_wei,l_lan):
-	#数据合法性检验
-	sn = len(s_wei)
-	assert sn > 0
-	assert len(l_lan) == sn
-	for i in range(sn):
-		assert len(l_lan[i]) == sn
-
-	#算法开始
-	#每个交换机和控制器通讯的次数（流建立请求，规则下发）
-	com_num = [0]*sn
-	for i in xrange(sn):
-		#流建立请求（包括回应）
-		com_num[i] = s_wei[i]*2
-		for j in xrange(sn):
-			#规则建立部分
-				com_num[i] += l_wei[j][i]
-	cost = sys.maxint
-	ii = -1
-	for i in range(sn):
-		tmp_cost = 0
-		for j in range(sn):
-			tmp_cost += s_wei[j]*l_lan[i][j]
-		if tmp_cost < cost:
-			ii = i
-			cost = tmp_cost
-	if False:
-	#if True:
-		#最短路径矩阵
-		print '最短路径矩阵：'
-		for i in range(sn):
-			for j in range(sn):
-				if l_lan[i][j] == sys.maxint/4:
-					print 'x ',
-				else:
-					print '%d '%l_lan[i][j],
-			print ''
-		print '通讯总花费：%d'%cost 
-		print '+++++++++++++++++++++++++++++++++++++++++'
-	#print '通讯总花费：%d'%cost 
-	#print '+++++++++++++++++++++++++++++++++++++++++'
-	return [ii,cost]
 #功能：划分区域，放置控制器
 #输入：分区数量pn
 #输出：划分数组part[sn]（sn为交换机数量）,控制器放置数组ctr_place[n_part]
@@ -75,46 +20,60 @@ def switch_partition_and_controller_deployment(pn):
 
 	sn = len(s_wei)
 
-	#划分算法开始
-	#随机获得划分结果
- 	partition = random_partition(sn, pn)
-	#划分算法结束
 	
-	#放置算法开始
-	s_wei_2 = get_s_wei_2(l_wei, partition)
-	#获取part_no
-	part_no = {}
-	#无法保证分区数量为pn
-	#for i in range(sn):
-	#	part_no[partition[i]] = partition[i]
-	####################
-	#修改如下
-	for i in xrange(pn):
-		part_no[i+1] = i+1
-	###################
-
+	partition = [-1]*sn
 	ctr_place = {}
 	part_cost = {} 
-	for pno in part_no.keys():
-		ctr_place[pno] = -1
-		part_cost[pno] = 0
 
-	for c_part_no in part_no.keys():
-		res = get_child_network(s_wei,s_wei_2,l_wei,l_lan,partition,c_part_no)
-		if res == None:
-			ctr_place[c_part_no] = -1
-			part_cost[c_part_no] = 0
-			continue
-			
-		c_s_wei = res[0]
-		c_l_wei = res[1]
-		c_l_lan = res[2]
-		c_index = res[3]
-		res = controller_deployment(c_s_wei,c_l_wei,c_l_lan)
-		ctr_i = res[0]
-		ctr_place[c_part_no] = c_index[ctr_i]
-		part_cost[c_part_no] = res[1]
+	#求出流请求总量
+	sum_s_wei = 0
+	for i in xrange(sn):
+		sum_s_wei += s_wei[i]
 
+	for k in xrange(pn):
+		ctr_place[(k+1)] = -1
+		part_cost[(k+1)] = 0
+		#贪婪方式选出控制器位置
+		cost = sys.maxint
+		ii = -1
+		for i in range(sn):
+			#控制器位置可能和非它管控的交换机直接相连
+			if(partition[i] != -1):
+				continue
+			tmp_cost = 0
+			#选出未分配交换机与控制器通讯总花费最小的位置ii
+			for j in range(sn):
+				if(partition[j] != -1): #未分配交换机
+					tmp_cost += s_wei[j]*l_lan[i][j]
+			if tmp_cost < cost:
+				ii = i
+				cost = tmp_cost
+		ctr_place[(k+1)] = ii
+
+		#该区域的交换机
+		domain_s_wei = 0
+		while True:
+			jj = -1
+			cost = sys.maxint
+			for j in xrange(sn):
+				if(partition[j] != -1):
+					continue
+				tmp_cost = s_wei[j]*l_lan[ii][j]
+				if tmp_cost < cost:
+					jj = j
+					cost = tmp_cost
+			#表示所有交换机已经分配完成	
+			if(jj == -1):
+				break;
+			#交换机jj分配给区域(k+1)
+			partition[jj] = k+1
+			part_cost[(k+1)] += cost
+			domain_s_wei += s_wei[jj]
+			#区域负载是否已经达到
+			if(domain_s_wei*pn >= sum_s_wei):
+				break;
+				
+	
 	return [partition, ctr_place, part_cost]
 
 if __name__ == '__main__':
@@ -132,10 +91,7 @@ if __name__ == '__main__':
 	s_wei = [2,2,10,2]
 	l_lan = [[0,1,1,1],[1,0,max_int,max_int],[1,max_int,0,max_int],[1,max_int,max_int,0]]
 	l_wei = [[0,1,1,1],[1,0,0,0],[1,0,0,0],[1,0,0,0]]
-	i = controller_deployment(s_wei,l_wei,l_lan)[0]
-	if False:
-		print 'i=%d'%i
-		print 'switch partition and controller placement:'
+
 	#输入
 	net_topo_file_names = ['33sw.txt','50sw.txt','100sw.txt']
 	topo = ['33sw','50sw','100sw']
@@ -144,8 +100,8 @@ if __name__ == '__main__':
 
 	
 	#输出
-	output_file_name_1 = 'output.txt'
-	output_file_name_2 = 'output_2.txt'
+	output_file_name_1 = 'greedy_output.txt'
+	output_file_name_2 = 'greedy_output_2.txt'
 	out_1 = open(output_file_name_1,'w')
 	out_2 = open(output_file_name_2,'w')
 
@@ -218,11 +174,11 @@ if __name__ == '__main__':
 			out_2.write('各个分区的交换机权重总和\n')
 			for pno in part_s_wei.keys():
 				out_2.write('%2d '%part_s_wei[pno])
-				output_load.write('random\t%s\t%d\t%d\t%d\t%d\n'%(topo[k],pn,pno,part_s_num[pno],part_s_wei[pno]))
+				output_load.write('greedy\t%s\t%d\t%d\t%d\t%d\n'%(topo[k],pn,pno,part_s_num[pno],part_s_wei[pno]))
 			out_2.write('\n')
 			#割边数量，即跨域流量
 			out_2.write('跨域流（割边）数量：%d\n'%edge_cut)
-			output_traffic.write('random\t%s\t%d\t%d\n'%(topo[k],pn,edge_cut))
+			output_traffic.write('greedy\t%s\t%d\t%d\n'%(topo[k],pn,edge_cut))
 
 			out_2.write('交换机分区情况\n')
 			for i in xrange(len(part)):
