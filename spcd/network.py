@@ -1,6 +1,8 @@
 #coding:utf-8
 import sys
 import re
+import random
+
 class Network(object):
 
 	def __init__(self, topo, flow = None):
@@ -25,7 +27,11 @@ class Network(object):
 		#self.l_wei	#流量矩阵
 		sn = len(self.topo)
 		if not flow:
-			flow = [[1 for col in xrange(sn)] for row in xrange(sn)]
+			flow = [[0 for col in xrange(sn)] for row in xrange(sn)]
+			for i in xrange(sn):
+				for j in xrange(sn):
+					if random.randint(0,5) == 1:
+						flow[i][j] = random.randint(1,2)
 			self.set_flow(flow)
 		elif type(flow) == type('string'):
 			flow_file_name = flow

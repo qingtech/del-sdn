@@ -1,4 +1,6 @@
 #encoding=utf-8
+import os
+import time
 import copy
 import gv
 import mlkp_alg
@@ -18,6 +20,7 @@ if __name__=='__main__':
 	flow_file_name_list = ['235sw_flow.txt','246sw_flow.txt','300sw_flow.txt']
 
 	
+	print 'Rscript load.R'
 	#输出
 
 	load_file_name = 'load.txt'
@@ -29,6 +32,7 @@ if __name__=='__main__':
 
 
 	for k in xrange(3):
+		break
 		#设置输入：网络拓扑,流矩阵,分区层数
 		gv.net_topo_file_name = topo_file_name_list[k]
 		gv.flow_file_name = flow_file_name_list[k]
@@ -65,17 +69,16 @@ if __name__=='__main__':
 		l_wei = network.l_wei
 		l_lan = network.path_cost
 		###################
-		print '-----------s_wei----------------------------'
-		for i in xrange(sn):
-			print '%d:%d\t'%(i,s_wei[i]),
-		print ''
-		'''
 		print '-----------l_wei----------------------------'
 		for i in xrange(sn):
 			for j in xrange(sn):
-				print '(%d-> %d):%d\t'%(i,j,l_wei[i][j]),
+				print '[(%d-> %d),%d]\t'%(i,j,l_wei[i][j]),
+			print ''
 		print ''
-		'''
+		print '-----------s_wei----------------------------'
+		for i in xrange(sn):
+			print '[%d,%d]\t'%(i,s_wei[i]),
+		print ''
 
 
 
@@ -99,6 +102,13 @@ if __name__=='__main__':
 				output_load.write('mlkp\t%s\t%d\t%d\t%d\t%d\n'%(topo[k],pn,pno,part_s_num[pno],part_s_wei[pno]))
 
 			output_traffic.write('mlkp\t%s\t%d\t%d\t%s\n'%(topo[k],pn,edge_cut,nn[k]))
+			print '-------------------------mlkp[%s-%d]-------------------------------\n'%(nn[k],pn)
+			print '各个分区的交换机权重总和'
+			for pno in part_s_wei.keys():
+				print '%2d '%part_s_wei[pno],
+			print ''
+			print '跨域流量（割边）数量：%d'%edge_cut
+
 			#mlkp end
 			#random begin
 			res = random_alg.switch_partition_and_controller_deployment(pn)
@@ -117,6 +127,12 @@ if __name__=='__main__':
 				output_load.write('random\t%s\t%d\t%d\t%d\t%d\n'%(topo[k],pn,pno,part_s_num[pno],part_s_wei[pno]))
 
 			output_traffic.write('random\t%s\t%d\t%d\t%s\n'%(topo[k],pn,edge_cut,nn[k]))
+			print '-------------------------random[%s-%d]-------------------------------\n'%(nn[k],pn)
+			print '各个分区的交换机权重总和'
+			for pno in part_s_wei.keys():
+				print '%2d '%part_s_wei[pno],
+			print ''
+			print '跨域流量（割边）数量：%d'%edge_cut
 			#random end
 			#greedy begin
 			res = greedy_alg.switch_partition_and_controller_deployment(pn)
@@ -135,11 +151,18 @@ if __name__=='__main__':
 				output_load.write('greedy\t%s\t%d\t%d\t%d\t%d\n'%(topo[k],pn,pno,part_s_num[pno],part_s_wei[pno]))
 
 			output_traffic.write('greedy\t%s\t%d\t%d\t%s\n'%(topo[k],pn,edge_cut,nn[k]))
+			print '-------------------------greedy[%s-%d]-------------------------------\n'%(nn[k],pn)
+			print '各个分区的交换机权重总和'
+			for pno in part_s_wei.keys():
+				print '%2d '%part_s_wei[pno],
+			print ''
+			print '跨域流量（割边）数量：%d'%edge_cut
 			#greedy end
+			
 
 			#是否打印在控制台上
-			#if False:
-			if True:
+			if False:
+			#if True:
 				print '-------------------------[%s-%d]-------------------------------\n'%(nn[k],pn)
 				print '各个分区交换机数量'
 				for pno in part_s_num.keys():
@@ -166,5 +189,20 @@ if __name__=='__main__':
 				for pno in part_cost.keys():
 					print '%2d '%part_cost[pno],
 				print ''
+	cmd = 'cp load.txt Rscript'
+	os.system(cmd)
+	time.sleep(1)
+	cmd = 'cp traffic.txt Rscript'
+	os.system(cmd)
+	time.sleep(1)
+	cmd = 'cd Rscript && Rscript load.R && cd ..'
+	os.system(cmd)
+	cmd = 'cd Rscript && Rscript traffic.R && cd ..'
+	os.system(cmd)
+	time.sleep(30)
+	cmd = 'cd Rscript && mkdir 1 && cd ..'
+	os.system(cmd)
+	cmd = 'cd Rscript && mv *.txt *.pdf 1 && cd ..'
+	os.system(cmd)
 
 	
