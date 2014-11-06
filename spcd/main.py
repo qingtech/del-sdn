@@ -12,10 +12,10 @@ if __name__=='__main__':
 
 	max_int = 10000
 	#输入
-	topo_file_name_list = ['33sw.txt','50sw.txt','100sw.txt']
-	topo = ['33sw','50sw','100sw']
-	nn = ['33','50','100']
-	flow_file_name_list = ['33sw_flow.txt','50sw_flow.txt','100sw_flow.txt']
+	topo_file_name_list = ['235sw.txt','274sw.txt','349sw.txt']
+	topo = ['235sw','274sw','349sw']
+	nn = ['235','274','349']
+	flow_file_name_list = ['235sw_flow.txt','246sw_flow.txt','300sw_flow.txt']
 
 	
 	#输出
@@ -25,7 +25,7 @@ if __name__=='__main__':
 	output_load = open(load_file_name,'w')
 	output_load.write('algs\ttopo\tkway\tpart\tscount\tload\n')
 	output_traffic = open(traffic_file_name,'w')
-	output_traffic.write('algs\ttopo\tkway\ttraffic\n')
+	output_traffic.write('algs\ttopo\tkway\ttraffic\tflow\n')
 
 
 	for k in xrange(3):
@@ -98,7 +98,7 @@ if __name__=='__main__':
 			for pno in part_s_wei.keys():
 				output_load.write('mlkp\t%s\t%d\t%d\t%d\t%d\n'%(topo[k],pn,pno,part_s_num[pno],part_s_wei[pno]))
 
-			output_traffic.write('mlkp\t%s\t%d\t%d\n'%(topo[k],pn,edge_cut))
+			output_traffic.write('mlkp\t%s\t%d\t%d\t%s\n'%(topo[k],pn,edge_cut,nn[k]))
 			#mlkp end
 			#random begin
 			res = random_alg.switch_partition_and_controller_deployment(pn)
@@ -116,7 +116,7 @@ if __name__=='__main__':
 			for pno in part_s_wei.keys():
 				output_load.write('random\t%s\t%d\t%d\t%d\t%d\n'%(topo[k],pn,pno,part_s_num[pno],part_s_wei[pno]))
 
-			output_traffic.write('random\t%s\t%d\t%d\n'%(topo[k],pn,edge_cut))
+			output_traffic.write('random\t%s\t%d\t%d\t%s\n'%(topo[k],pn,edge_cut,nn[k]))
 			#random end
 			#greedy begin
 			res = greedy_alg.switch_partition_and_controller_deployment(pn)
@@ -134,7 +134,7 @@ if __name__=='__main__':
 			for pno in part_s_wei.keys():
 				output_load.write('greedy\t%s\t%d\t%d\t%d\t%d\n'%(topo[k],pn,pno,part_s_num[pno],part_s_wei[pno]))
 
-			output_traffic.write('greedy\t%s\t%d\t%d\n'%(topo[k],pn,edge_cut))
+			output_traffic.write('greedy\t%s\t%d\t%d\t%s\n'%(topo[k],pn,edge_cut,nn[k]))
 			#greedy end
 
 			#是否打印在控制台上
