@@ -1,7 +1,7 @@
 #Input:load.txt
 
 #1.从文件里读取区域负载
-    #列:algs,topo,kway,part,scount,load
+    #列:algs,topo,kway,part,scount,load,sd,sd2
     #e.g.
 #setwd('d://')
 load = read.table('load.txt',header=TRUE,sep="\t")
@@ -12,6 +12,10 @@ std = std[,-4]
 #delete column scount
 std = std[,-4]
 #delete column load
+std = std[,-4]
+#delete column sd
+std = std[,-4]
+#delete column sd2
 std = std[,-4]
 #remove duplicated
 std = std[which(!duplicated(std)),]

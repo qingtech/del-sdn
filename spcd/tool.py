@@ -1,5 +1,28 @@
 #encoding=utf-8
 
+#功能：获取标准差
+#输入：tlist
+#输出：sd
+def get_standard_deviation(tlist):
+	assert tlist
+	assert len(tlist) > 0
+	nlist = [float(i)/1000000 for i in tlist]
+	N = len(nlist)
+	sum1 = 0.0
+	sum2 = 0.0
+	for i in xrange(N):
+		sum1 += nlist[i]
+		sum2 += nlist[i]**2
+	mean = sum1/N
+	var = sum2/N - mean**2
+	var *= 1000000
+	var *= 1000000
+	#print 'var=%10.14f'%var
+	import math
+	sd = math.sqrt(var)
+	#print 'sd=%10.14f'%sd
+	return sd
+
 #功能：根据链路权重l_wei将中间路径建立请求添加到s_wei
 #输入：
 #l_wei: 链路权重
@@ -129,4 +152,7 @@ def get_res(s_wei, l_wei, l_lan, partition, ctr_place):
 
 	return [part_s_num, part_s_wei, edge_cut, part_cost]
 
-
+if __name__ == '__main__':
+	tlist = [1,2]
+	sd = get_standard_deviation(tlist)
+	print 'sd=%f'%sd

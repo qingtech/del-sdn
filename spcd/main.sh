@@ -8,6 +8,7 @@ cp traffic.txt Rscript
 cd Rscript
 echo 'start to run R script'
 Rscript load.R
+Rscript load2.R
 Rscript traffic.R
 rm Rplots.pdf
 dname=$(date +%Y%m%d-%H%M%S)
