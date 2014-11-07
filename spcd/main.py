@@ -20,7 +20,6 @@ if __name__=='__main__':
 	flow_file_name_list = ['235sw_flow.txt','246sw_flow.txt','300sw_flow.txt']
 
 	
-	print 'Rscript load.R'
 	#输出
 
 	load_file_name = 'load.txt'
@@ -32,7 +31,6 @@ if __name__=='__main__':
 
 
 	for k in xrange(3):
-		break
 		#设置输入：网络拓扑,流矩阵,分区层数
 		gv.net_topo_file_name = topo_file_name_list[k]
 		gv.flow_file_name = flow_file_name_list[k]
@@ -189,20 +187,5 @@ if __name__=='__main__':
 				for pno in part_cost.keys():
 					print '%2d '%part_cost[pno],
 				print ''
-	cmd = 'cp load.txt Rscript'
-	os.system(cmd)
-	time.sleep(1)
-	cmd = 'cp traffic.txt Rscript'
-	os.system(cmd)
-	time.sleep(1)
-	cmd = 'cd Rscript && Rscript load.R && cd ..'
-	os.system(cmd)
-	cmd = 'cd Rscript && Rscript traffic.R && cd ..'
-	os.system(cmd)
-	time.sleep(30)
-	cmd = 'cd Rscript && mkdir 1 && cd ..'
-	os.system(cmd)
-	cmd = 'cd Rscript && mv *.txt *.pdf 1 && cd ..'
-	os.system(cmd)
-
+	
 	
