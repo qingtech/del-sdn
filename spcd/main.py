@@ -7,7 +7,6 @@ import mlkp_alg
 import random_alg
 import greedy_alg
 import tool
-from load_network import load_topo
 from network import Network
 
 if __name__=='__main__':
@@ -34,27 +33,6 @@ if __name__=='__main__':
 		#设置输入：网络拓扑,流矩阵,分区层数
 		gv.net_topo_file_name = topo_file_name_list[k]
 		gv.flow_file_name = flow_file_name_list[k]
-		load_topo()
-
-		sn = gv.s_num
-		
-		
-		s_wei = [1]*sn
-		l_wei = copy.deepcopy(gv.net_topo)
-		l_lan = copy.deepcopy(gv.net_topo)
-		for i in range(sn):
-			for j in range(sn):
-				if l_wei[i][j] == 0:
-					l_lan[i][j] = max_int
-		#Floyd最短路径
-		for i in xrange(sn):
-			for j in xrange(sn):
-				for r in xrange(sn):
-					if l_lan[i][r] + l_lan[r][j] < l_lan[i][j]:
-						l_lan[i][j] = l_lan[i][r] + l_lan[r][j]
-		gv.s_wei = s_wei
-		gv.l_wei = l_wei
-		gv.l_lan = l_lan
 
 		####################
 		network = Network(topo_file_name_list[k])
@@ -67,6 +45,7 @@ if __name__=='__main__':
 		l_wei = network.l_wei
 		l_lan = network.path_cost
 		###################
+		sn = gv.s_num
 		print '-----------l_wei----------------------------'
 		for i in xrange(sn):
 			for j in xrange(sn):
@@ -153,8 +132,8 @@ if __name__=='__main__':
 			#greedy end
 
 			#mlkp begin
-			res = mlkp_alg.switch_partition_and_controller_deployment(level)
-			#res = random_alg.switch_partition_and_controller_deployment(pn)
+			#res = mlkp_alg.switch_partition_and_controller_deployment(level)
+			res = random_alg.switch_partition_and_controller_deployment(pn)
 			part = res[0]
 			ctr_place = res[1]
 			part_cost = res[2]

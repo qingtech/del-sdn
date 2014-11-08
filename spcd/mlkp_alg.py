@@ -1,9 +1,10 @@
 #encoding=utf-8
 import gv
-from load_network import load_topo
 import sys
 import copy
 import initial_partitioning
+import tool
+from network import Network
 from tool import get_s_wei_2,get_child_network,get_res
 
 #功能；在所有交换机中选取一个交换机与控制器直接相连，使得控制器与交换机的通讯总体花费最少
@@ -114,133 +115,105 @@ def switch_partition_and_controller_deployment(level):
 
 	return [partition, ctr_place, part_cost]
 
-if __name__ == '__main__':
-	#输入：网络拓扑矩阵file，流矩阵file，划分区域数，(链路延迟）
-	#输出：区域负载，域内流数量，跨域流（割边）数量,分区结果，(控制器放置)
-	max_int = 10000
-	"""
-		    (1)(2)(1)
-		(2)1————0————2(10)
-		     	|
-			|(1)
-		     	|
-		     	3(2)
-	"""
-	s_wei = [2,2,10,2]
-	l_lan = [[0,1,1,1],[1,0,max_int,max_int],[1,max_int,0,max_int],[1,max_int,max_int,0]]
-	l_wei = [[0,1,1,1],[1,0,0,0],[1,0,0,0],[1,0,0,0]]
-	i = controller_deployment(s_wei,l_wei,l_lan)[0]
-	if False:
-		print 'i=%d'%i
-		print 'switch partition and controller placement:'
+if __name__=='__main__':
+
 	#输入
-	net_topo_file_names = ['33sw.txt','50sw.txt','100sw.txt']
-	topo = ['33sw','50sw','100sw']
-	nn = ['33','50','100']
-	flow_file_names = ['33sw_flow.txt','50sw_flow.txt','100sw_flow.txt']
+	topo_file_name_list = ['235sw.txt','274sw.txt','349sw.txt']
+	topo = ['235sw','274sw','349sw']
+	nn = ['235','274','349']
+	flow_file_name_list = ['235sw_flow.txt','246sw_flow.txt','300sw_flow.txt']
 
 	
 	#输出
-	output_file_name_1 = 'output.txt'
-	output_file_name_2 = 'output_2.txt'
-	out_1 = open(output_file_name_1,'w')
-	out_2 = open(output_file_name_2,'w')
-
 
 	load_file_name = 'load.txt'
 	traffic_file_name = 'traffic.txt'
 	output_load = open(load_file_name,'w')
-	output_load.write('algs\ttopo\tkway\tpart\tscount\tload\n')
+	output_load.write('algs\ttopo\tkway\tpart\tscount\tload\tsd\tsd2\n')
 	output_traffic = open(traffic_file_name,'w')
-	output_traffic.write('algs\ttopo\tkway\ttraffic\n')
+	output_traffic.write('algs\ttopo\tkway\ttraffic\ttraffic2\tflow\n')
 
 
 	for k in xrange(3):
 		#设置输入：网络拓扑,流矩阵,分区层数
-		gv.net_topo_file_name = net_topo_file_names[k]
-		gv.flow_file_name = flow_file_names[k]
-		load_topo()
+		gv.net_topo_file_name = topo_file_name_list[k]
+		gv.flow_file_name = flow_file_name_list[k]
 
-		sn = gv.s_num
-		s_wei = [1]*sn
-		l_wei = copy.deepcopy(gv.net_topo)
-		l_lan = copy.deepcopy(gv.net_topo)
-		for i in range(sn):
-			for j in range(sn):
-				if l_wei[i][j] == 0:
-					l_lan[i][j] = max_int
-		#Floyd最短路径
+		####################
+		network = Network(topo_file_name_list[k])
+		gv.s_sum = network.sn
+		gv.net_topo = network.topo
+		gv.s_wei = network.s_wei
+		gv.l_wei = network.l_wei
+		gv.l_lan = network.path_cost
+		s_wei = network.s_wei
+		l_wei = network.l_wei
+		l_lan = network.path_cost
+		###################
+		sn = gv.s_sum
+		print 'gv.s_sum=%d'%(gv.s_sum)
+		print 'sn=%d'%sn
+		print 'switch number: %d'%(network.sn)
+		print 'link number: %d'%(network.ln)
+		'''
+		print '-----------l_wei----------------------------'
 		for i in xrange(sn):
 			for j in xrange(sn):
-				for r in xrange(sn):
-					if l_lan[i][r] + l_lan[r][j] < l_lan[i][j]:
-						l_lan[i][j] = l_lan[i][r] + l_lan[r][j]
-		gv.s_wei = s_wei
-		gv.l_wei = l_wei
-		gv.l_lan = l_lan
+				print '[(%d-> %d),%d]\t'%(i,j,l_wei[i][j]),
+			print ''
+		print ''
+		print '-----------s_wei----------------------------'
+		for i in xrange(sn):
+			print '[%d,%d]\t'%(i,s_wei[i]),
+		print ''
+		'''
+
+
 
 		#算法开始
 		for level in xrange(1,6):
+			pn = 2**level #区域数目
+			sd = {}
+			traffic = {}
+			sd2 = {}
+			traffic2 = {}
+		
+			#mlkp begin
 			res = switch_partition_and_controller_deployment(level)
-			pn = 2**level
 			part = res[0]
 			ctr_place = res[1]
 			part_cost = res[2]
 
-			res_b = get_res(s_wei, l_wei, l_lan, part,ctr_place)
+			res_b = tool.get_res(s_wei, l_wei, l_lan, part,ctr_place)
 			part_s_num = res_b[0]
 			part_s_wei = res_b[1]
 			edge_cut = res_b[2]
-			edge_cut_b = res_b[2]
 
-			#交换机数量为nn[k],分区数量为pn
-			#[nn[k],pn],例如：[33,2]
-			out_1.write('[%s-%d]\n'%(nn[k],pn))
-			out_2.write('[%s-%d]\n'%(nn[k],pn))
-			for pno in ctr_place.keys():
-				#列出分区编号为pno的所有交换机，后一个为控制器所在的交换机位置
-				#例如：1,2,3,1 该分区有交换机1,2,3并且控制器与交换机1直接相连
-				for j in xrange(len(part)):
-					if part[j] == pno:
-						out_1.write('%d,'%j)
-						out_2.write('%d,'%j)
-				out_1.write('%d\n'%ctr_place[pno])
-				out_2.write('%d\n'%ctr_place[pno])
-			
-			
-			out_2.write('各个分区交换机数量\n')
-			for pno in part_s_num.keys():
-				out_2.write('%2d '%part_s_num[pno])
-			out_2.write('\n')
-			out_2.write('各个分区的交换机权重总和\n')
+			sd['mlkp'] = tool.get_standard_deviation(part_s_wei.values())
+			traffic['mlkp'] = edge_cut
+			sd2['mlkp'] = sd['mlkp']/sd['mlkp']
+			traffic2['mlkp'] = float(traffic['mlkp'])/traffic['mlkp']
+
 			for pno in part_s_wei.keys():
-				out_2.write('%2d '%part_s_wei[pno])
-				output_load.write('mlkp\t%s\t%d\t%d\t%d\t%d\n'%(topo[k],pn,pno,part_s_num[pno],part_s_wei[pno]))
-			out_2.write('\n')
-			#割边数量，即跨域流数量
-			out_2.write('跨域流（割边）数量：%d\n'%edge_cut)
-			output_traffic.write('mlkp\t%s\t%d\t%d\n'%(topo[k],pn,edge_cut))
+				output_load.write('mlkp\t%s\t%d\t%d\t%d\t%d\t%f\t%f\n'%(topo[k],pn,pno,part_s_num[pno],part_s_wei[pno],sd['mlkp'],sd2['mlkp']))
 
-			out_2.write('交换机分区情况\n')
-			for i in xrange(len(part)):
-				out_2.write('%2d '%part[i])
-			out_2.write('\n')
+			output_traffic.write('mlkp\t%s\t%d\t%d\t%f\t%s\n'%(topo[k],pn,traffic['mlkp'],traffic2['mlkp'],nn[k]))
+			print '-------------------------mlkp[%s-%d]-------------------------------\n'%(nn[k],pn)
+			print '各个分区的交换机权重总和'
+			for pno in part_s_wei.keys():
+				print '%2d '%part_s_wei[pno],
+			print ''
+			print '区域负载标准差：%f'%sd['mlkp']
+			print '区域负载标准差2：%f'%sd2['mlkp']
+			print '跨域流量（割边）数量：%d'%traffic['mlkp']
+			print '跨域流量（割边）数量2：%f'%traffic2['mlkp']
 			
-			out_2.write('控制器放置位置\n')
-			for pno in ctr_place.keys():
-				out_2.write('%2d '%(pno))
-			out_2.write('\n')
-			for pno in ctr_place.keys():
-				out_2.write('%2d '%ctr_place[pno])
-			out_2.write('\n')
-			out_2.write('各个分区花费代价\n')
-			for pno in part_cost.keys():
-				out_2.write('%2d '%part_cost[pno])
-			out_2.write('\n')
-			out_2.write('--------------------------------------------------------\n')
+			#mlkp end
+			
+
 			#是否打印在控制台上
-			#if False:
-			if True:
+			if False:
+			#if True:
 				print '-------------------------[%s-%d]-------------------------------\n'%(nn[k],pn)
 				print '各个分区交换机数量'
 				for pno in part_s_num.keys():
@@ -267,4 +240,5 @@ if __name__ == '__main__':
 				for pno in part_cost.keys():
 					print '%2d '%part_cost[pno],
 				print ''
+	
 

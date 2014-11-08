@@ -4,7 +4,6 @@ import sys
 import random
 import copy
 from my_priority_queue import MyPriorityQueue
-from load_network import load_topo
 from tool import get_s_wei_2,get_child_network
 debug = False 
 

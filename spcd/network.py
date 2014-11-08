@@ -5,13 +5,16 @@ import random
 
 class Network(object):
 
-	def __init__(self, topo, flow = None):
+	def __init__(self, topo, flow = None, name = None):
 		assert topo
 		self.INF = sys.maxint/4 #表示交换机间不可达或者之间不存在链路
+
+		self.name = name
 		
 		#set topo
 		#self.topo	#网络拓扑
 		#self.sn	#交换机(节点)数目
+		#self.ln	#链路数目
 		#self.l_dist	#链路的距离
 		#self.path_succ	#链路后驱矩阵
 		#self.path_cost	#路径花费矩阵
@@ -79,13 +82,25 @@ class Network(object):
 		assert topo
 
 		sn = len(topo)
+		ln = 0
+		for i in xrange(sn-1):
+			for j in xrange(i+1,sn):
+				if topo[i][j] != 0:
+					ln += 1
 		l_dist = [[self.INF for col in range(sn)] for row in range(sn)]
 		for i in xrange(sn):
 			for j in xrange(sn):
 				#topo[i][j] = 0表示交换机i和j之间没有链路, topo[i][j] > 0, 表示i和j之间的距离
 				if topo[i][j] > 0:
 					l_dist[i][j] = topo[i][j]
-		self.sn = len(topo)
+		#设置名称
+		name = self.name
+		if not name:
+			name = 'topo_%dsw_%dlk'%(sn,ln)
+
+		self.sn = sn
+		self.ln = ln
+		self.name = name
 		self.topo = topo
 		self.l_dist = l_dist
 		res = self.floyd(l_dist)
@@ -225,12 +240,17 @@ if __name__ == '__main__':
 	"""
 	topo = [[0,1,3,2],[1,0,0,4],[3,0,0,4],[2,4,4,0]]
 	
-	network = Network(topo)	
-	network.print_path()
-	network.print_wei()
+	network = Network(topo,name='simple topo')	
+	print network.name
+	print 'switch number:%d'%(network.sn)
+	print 'link number:%d'%(network.ln)
+	#network.print_path()
+	#network.print_wei()
 	
-	print 'in topo 33sw'
 	topo_file_name = '33sw.txt'
-	network = Network(topo_file_name)
-	network.print_path()
-	network.print_wei()
+	network = Network(topo_file_name,)
+	print network.name
+	print 'switch number:%d'%(network.sn)
+	print 'link number:%d'%(network.ln)
+	#network.print_path()
+	#network.print_wei()
