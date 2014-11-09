@@ -1,10 +1,28 @@
+#encoding=utf-8
 class Result(object):
 
-	def __init__(self,):
+	def __init__(self, network, algorithm, partition=None, ctr_place=None, part_cost=None, part_s_num=None, part_s_wei=None, inter_traffic=None,):
 
-class Algorithm(object):
+		assert network
+		assert algorithm
+
+		self.network = network
+		self.algorithm = algorithm
+		self.partition = partition
+		self.ctr_place = ctr_place
+		self.part_cost = part_cost
+		self.part_s_num = part_s_num
+		self.part_s_wei = part_s_wei
+		self.inter_traffic = inter_traffic
+
+	def get_load_sd():
+		print 'hello'
 	
-	def __init__(self, network=None, level=None, pn=None):
+class Algorithm(object):
+
+	def __init__(self, name,  network=None, level=None, pn=None):
+		assert name
+		self.name = name
 		#优先遵循level
 		if level:
 			assert level > 0

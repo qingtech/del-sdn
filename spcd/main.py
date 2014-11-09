@@ -11,7 +11,6 @@ from network import Network
 
 if __name__=='__main__':
 
-	max_int = 10000
 	#输入
 	topo_file_name_list = ['235sw.txt','274sw.txt','349sw.txt']
 	topo = ['235sw','274sw','349sw']
