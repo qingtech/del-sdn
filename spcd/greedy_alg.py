@@ -9,7 +9,14 @@ from tool import get_s_wei_2,get_child_network,get_res
 
 class GreedyAlg(Algorithm):
 
-	def run(self,):
+	def run(self, network, level=None, pn=None, ):
+
+		super(GreedyAlg, self).run(network, level, pn)
+
+		assert network
+		assert pn
+		
+		self.pn = pn
 
 		return self.switch_partition_and_controller_deployment()
 
@@ -26,6 +33,7 @@ class GreedyAlg(Algorithm):
 
 		#输入
 		sn = self.network.sn
+		pn = self.pn
 		s_wei = self.network.s_wei
 		l_wei = self.network.l_wei
 		path_cost = self.network.path_cost
@@ -86,44 +94,28 @@ class GreedyAlg(Algorithm):
 					
 		
 		tmp_res = tool.get_res(s_wei, l_wei, path_cost, partition, ctr_place)
-		part_s_num = tmp_res[0]
+		part_sn = tmp_res[0]
 		part_s_wei = tmp_res[1]
 		inter_traffic = tmp_res[2]
-		res = Result(partition, ctr_place, part_cost, part_s_num, part_s_wei, inter_traffic)
+		res = Result(self.network, self, pn, partition, ctr_place, part_cost, part_sn, part_s_wei, inter_traffic)
 
 		return res
-
-
 
 if __name__=='__main__':
 
 	#输入
-	topo_file_name_list = ['235sw.txt','274sw.txt','349sw.txt']
-	topo = ['235sw','274sw','349sw']
-	nn = ['235','274','349']
+	#拓扑
+	topo_file_name_list = ['33sw.txt','50sw.txt','100sw.txt']
 	flow_file_name_list = ['235sw_flow.txt','246sw_flow.txt','300sw_flow.txt']
-
 	
-	#输出
+	net_dict = {}	
+	for topo_file_name in topo_file_name_list:
 
-	load_file_name = 'load.txt'
-	traffic_file_name = 'traffic.txt'
-	output_load = open(load_file_name,'w')
-	output_load.write('algs\ttopo\tkway\tpart\tscount\tload\tsd\tsd2\n')
-	output_traffic = open(traffic_file_name,'w')
-	output_traffic.write('algs\ttopo\tkway\ttraffic\ttraffic2\tflow\n')
+		network = Network(topo_file_name)
+		net_dict[network.name] = network
 
-
-	for k in xrange(3):
-		#设置输入：网络拓扑,流矩阵,分区层数
-
-		####################
-		network = Network(topo_file_name_list[k])
 		s_wei = network.s_wei
 		l_wei = network.l_wei
-		path_cost = network.path_cost
-
-		###################
 		'''
 		print '-----------l_wei----------------------------'
 		for i in xrange(sn):
@@ -138,43 +130,85 @@ if __name__=='__main__':
 		'''
 
 
+	#算法
+	alg_dict = {}
+	alg = GreedyAlg('greedy',)
+	alg_dict['greedy'] = alg
+	
+	#输出
 
-		#算法开始
+	res_list = []
+
+
+	for network in net_dict.values():
+		for level in xrange(1,6):
+
+			pn = 2**level #区域数目
+			for alg in alg_dict.values():
+
+				res = alg.run(network, level, pn)
+				res_list.append(res)
+
+
+	#set load_sd_2, inter_traffic_2
+	res_dict = {}
+	for res in res_list:
+		topo_name = res.network.name
+		pn = res.pn
+		alg_name = res.algorithm.name
+		if not res_dict.get(topo_name, None):
+			res_dict[topo_name] = {}
+		if not res_dict[topo_name].get(pn, None):
+			res_dict[topo_name][pn] = {}
+		res_dict[topo_name][pn][alg_name] = res
+
+	base_alg_name = 'greedy'
+	for network in net_dict.values():
+		topo_name = network.name
 		for level in xrange(1,6):
 			pn = 2**level #区域数目
-			sd = {}
-			traffic = {}
-			sd2 = {}
-			traffic2 = {}
-			#greedy begin
-			alg = GreedyAlg(network, level, pn)
-			res = alg.run()
+			base_res = res_dict[topo_name][pn][base_alg_name]
+			for alg in alg_dict.values():
+				alg_name = alg.name
+				res = res_dict[topo_name][pn][alg_name]
+				res.load_sd_2 = float(res.load_sd)/float(base_res.load_sd)
+				res.inter_traffic_2 = float(res.inter_traffic)/float(base_res.inter_traffic)
+				
 
-			part = res.partition
-			ctr_place = res.ctr_place
-			part_cost = res.part_cost
-			part_s_num = res.part_s_num
-			part_s_wei = res.part_s_wei
-			inter_traffic = res.inter_traffic
+	#output
+	load_file_name = 'load.txt'
+	traffic_file_name = 'traffic.txt'
+	output_load = open(load_file_name,'w')
+	output_load.write('algs\ttopo\tkway\tpart\tscount\tload\tsd\tsd2\n')
+	output_traffic = open(traffic_file_name,'w')
+	output_traffic.write('algs\ttopo\tkway\ttraffic\ttraffic2\tflow\n')
+	for res in res_list:
 
-			
-			
-			sd['greedy'] = tool.get_standard_deviation(part_s_wei.values())
-			traffic['greedy'] = inter_traffic
-			sd2['greedy'] = sd['greedy']/sd['greedy']
-			traffic2['greedy'] = float(traffic['greedy'])/traffic['greedy']
+		part = res.partition
+		ctr_place = res.ctr_place
+		part_cost = res.part_cost
+		part_sn = res.part_sn
+		part_load = res.part_load
+		load_sd = res.load_sd
+		load_sd_2 = res.load_sd_2
+		inter_traffic = res.inter_traffic
+		inter_traffic_2 = res.inter_traffic_2
 
-			for pno in part_s_wei.keys():
-				output_load.write('greedy\t%s\t%d\t%d\t%d\t%d\t%f\t%f\n'%(topo[k],pn,pno,part_s_num[pno],part_s_wei[pno],sd['greedy'],sd2['greedy']))
+		topo_name = res.network.name
+		pn = res.pn
+		alg_name = res.algorithm.name
+		
 
-			output_traffic.write('greedy\t%s\t%d\t%d\t%f\t%s\n'%(topo[k],pn,traffic['greedy'],traffic2['greedy'],nn[k]))
-			print '-------------------------greedy[%s-%d]-------------------------------\n'%(nn[k],pn)
-			print '各个分区的交换机权重总和'
-			for pno in part_s_wei.keys():
-				print '%2d '%part_s_wei[pno],
-			print ''
-			print '区域负载标准差：%f'%sd['greedy']
-			print '区域负载标准差2：%f'%sd2['greedy']
-			print '跨域流量（割边）数量：%d'%traffic['greedy']
-			print '跨域流量（割边）数量2：%f'%traffic2['greedy']
-			#greedy end
+		for pno in part_load.keys():
+			output_load.write('%s\t%s\t%d\t%d\t%d\t%d\t%f\t%f\n'%(alg_name, topo_name, pn, pno, part_sn[pno], part_load[pno],load_sd,load_sd_2))
+
+		output_traffic.write('%s\t%s\t%d\t%d\t%f\t%s\n'%(alg_name, topo_name, pn, inter_traffic, inter_traffic_2, res.network.sn))
+		print '-------------------------%s[%s-%d]-------------------------------\n'%(alg_name, topo_name, pn)
+		print '各个分区的交换机权重总和'
+		for pno in part_load.keys():
+			print '%2d '%part_load[pno],
+		print ''
+		print '区域负载标准差：%f'%load_sd
+		print '区域负载标准差2：%f'%load_sd_2
+		print '跨域流量（割边）数量：%d'%inter_traffic
+		print '跨域流量（割边）数量2：%f'%inter_traffic_2

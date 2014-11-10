@@ -12,39 +12,21 @@ from network import Network
 if __name__=='__main__':
 
 	#输入
-	topo_file_name_list = ['235sw.txt','274sw.txt','349sw.txt']
-	topo = ['235sw','274sw','349sw']
-	nn = ['235','274','349']
+	#拓扑
+	#topo_file_name_list = ['235sw.txt','274sw.txt','349sw.txt']
+	#topo_file_name_list = ['33sw.txt','50sw.txt','100sw.txt']
+	topo_file_name_list = ['33sw.txt',]
 	flow_file_name_list = ['235sw_flow.txt','246sw_flow.txt','300sw_flow.txt']
-
 	
-	#输出
+	net_dict = {}	
+	for topo_file_name in topo_file_name_list:
 
-	load_file_name = 'load.txt'
-	traffic_file_name = 'traffic.txt'
-	output_load = open(load_file_name,'w')
-	output_load.write('algs\ttopo\tkway\tpart\tscount\tload\tsd\tsd2\n')
-	output_traffic = open(traffic_file_name,'w')
-	output_traffic.write('algs\ttopo\tkway\ttraffic\ttraffic2\tflow\n')
+		network = Network(topo_file_name)
+		net_dict[network.name] = network
 
-
-	for k in xrange(3):
-		#设置输入：网络拓扑,流矩阵,分区层数
-		gv.net_topo_file_name = topo_file_name_list[k]
-		gv.flow_file_name = flow_file_name_list[k]
-
-		####################
-		network = Network(topo_file_name_list[k])
-		gv.s_sum = network.sn
-		gv.net_topo = network.topo
-		gv.s_wei = network.s_wei
-		gv.l_wei = network.l_wei
-		gv.l_lan = network.path_cost
 		s_wei = network.s_wei
 		l_wei = network.l_wei
-		l_lan = network.path_cost
-		###################
-		sn = gv.s_num
+		'''
 		print '-----------l_wei----------------------------'
 		for i in xrange(sn):
 			for j in xrange(sn):
@@ -55,143 +37,92 @@ if __name__=='__main__':
 		for i in xrange(sn):
 			print '[%d,%d]\t'%(i,s_wei[i]),
 		print ''
+		'''
 
 
+	#算法
+	alg_dict = {}
+	alg = random_alg.RandomAlg('random',)
+	alg_dict['random'] = alg
+	alg = greedy_alg.GreedyAlg('greedy',)
+	alg_dict['greedy'] = alg
+	alg = mlkp_alg.MlkpAlg('mlkp',)
+	alg_dict['mlkp'] = alg
 
-		#算法开始
+	base_alg_name = 'random'
+
+	#结果
+
+	res_list = []
+
+	for network in net_dict.values():
+		for level in xrange(1,6):
+
+			pn = 2**level #区域数目
+			for alg in alg_dict.values():
+
+				res = alg.run(network, level, pn)
+				res_list.append(res)
+
+
+	#set load_sd_2, inter_traffic_2
+	res_dict = {}
+	for res in res_list:
+		topo_name = res.network.name
+		pn = res.pn
+		alg_name = res.algorithm.name
+		if not res_dict.get(topo_name, None):
+			res_dict[topo_name] = {}
+		if not res_dict[topo_name].get(pn, None):
+			res_dict[topo_name][pn] = {}
+		res_dict[topo_name][pn][alg_name] = res
+
+	for network in net_dict.values():
+		topo_name = network.name
 		for level in xrange(1,6):
 			pn = 2**level #区域数目
-			sd = {}
-			traffic = {}
-			sd2 = {}
-			traffic2 = {}
-			#random begin
-			res = random_alg.switch_partition_and_controller_deployment(pn)
-			part = res[0]
-			ctr_place = res[1]
-			part_cost = res[2]
+			base_res = res_dict[topo_name][pn][base_alg_name]
+			for alg in alg_dict.values():
+				alg_name = alg.name
+				res = res_dict[topo_name][pn][alg_name]
+				res.load_sd_2 = float(res.load_sd)/float(base_res.load_sd)
+				res.inter_traffic_2 = float(res.inter_traffic)/float(base_res.inter_traffic)
+				
 
-			res_b = tool.get_res(s_wei, l_wei, l_lan, part,ctr_place)
-			part_s_num = res_b[0]
-			part_s_wei = res_b[1]
-			edge_cut = res_b[2]
+	#输出
+	load_file_name = 'load.txt'
+	traffic_file_name = 'traffic.txt'
+	output_load = open(load_file_name,'w')
+	output_load.write('algs\ttopo\tkway\tpart\tscount\tload\tsd\tsd2\n')
+	output_traffic = open(traffic_file_name,'w')
+	output_traffic.write('algs\ttopo\tkway\ttraffic\ttraffic2\tflow\n')
+	for res in res_list:
 
-			
-			
-			sd['random'] = tool.get_standard_deviation(part_s_wei.values())
-			traffic['random'] = edge_cut
-			sd2['random'] = sd['random']/sd['random']
-			traffic2['random'] = float(traffic['random'])/traffic['random']
+		part = res.partition
+		part_sn = res.part_sn
+		part_load = res.part_load
+		load_sd = res.load_sd
+		load_sd_2 = res.load_sd_2
+		inter_traffic = res.inter_traffic
+		inter_traffic_2 = res.inter_traffic_2
 
-			for pno in part_s_wei.keys():
-				output_load.write('random\t%s\t%d\t%d\t%d\t%d\t%f\t%f\n'%(topo[k],pn,pno,part_s_num[pno],part_s_wei[pno],sd['random'],sd2['random']))
+		topo_name = res.network.name
+		pn = res.pn
+		alg_name = res.algorithm.name
+		
+		assert load_sd
+		assert load_sd_2
 
-			output_traffic.write('random\t%s\t%d\t%d\t%f\t%s\n'%(topo[k],pn,traffic['random'],traffic2['random'],nn[k]))
-			print '-------------------------random[%s-%d]-------------------------------\n'%(nn[k],pn)
-			print '各个分区的交换机权重总和'
-			for pno in part_s_wei.keys():
-				print '%2d '%part_s_wei[pno],
-			print ''
-			print '区域负载标准差：%f'%sd['random']
-			print '区域负载标准差2：%f'%sd2['random']
-			print '跨域流量（割边）数量：%d'%traffic['random']
-			print '跨域流量（割边）数量2：%f'%traffic2['random']
-			#random end
-			#greedy begin
-			res = greedy_alg.switch_partition_and_controller_deployment(pn)
-			part = res[0]
-			ctr_place = res[1]
-			part_cost = res[2]
+		for pno in part_load.keys():
+			output_load.write('%s\t%s\t%d\t%d\t%d\t%d\t%f\t%f\n'%(alg_name, topo_name, pn, pno, part_sn[pno], part_load[pno],load_sd,load_sd_2))
 
-			res_b = tool.get_res(s_wei, l_wei, l_lan, part,ctr_place)
-			part_s_num = res_b[0]
-			part_s_wei = res_b[1]
-			edge_cut = res_b[2]
-
-			
-			
-			sd['greedy'] = tool.get_standard_deviation(part_s_wei.values())
-			traffic['greedy'] = edge_cut
-			sd2['greedy'] = sd['greedy']/sd['random']
-			traffic2['greedy'] = float(traffic['greedy'])/traffic['random']
-
-			for pno in part_s_wei.keys():
-				output_load.write('greedy\t%s\t%d\t%d\t%d\t%d\t%f\t%f\n'%(topo[k],pn,pno,part_s_num[pno],part_s_wei[pno],sd['greedy'],sd2['greedy']))
-
-			output_traffic.write('greedy\t%s\t%d\t%d\t%f\t%s\n'%(topo[k],pn,traffic['greedy'],traffic2['greedy'],nn[k]))
-			print '-------------------------greedy[%s-%d]-------------------------------\n'%(nn[k],pn)
-			print '各个分区的交换机权重总和'
-			for pno in part_s_wei.keys():
-				print '%2d '%part_s_wei[pno],
-			print ''
-			print '区域负载标准差：%f'%sd['greedy']
-			print '区域负载标准差2：%f'%sd2['greedy']
-			print '跨域流量（割边）数量：%d'%traffic['greedy']
-			print '跨域流量（割边）数量2：%f'%traffic2['greedy']
-			#greedy end
-
-			#mlkp begin
-			#res = mlkp_alg.switch_partition_and_controller_deployment(level)
-			res = random_alg.switch_partition_and_controller_deployment(pn)
-			part = res[0]
-			ctr_place = res[1]
-			part_cost = res[2]
-
-			res_b = tool.get_res(s_wei, l_wei, l_lan, part,ctr_place)
-			part_s_num = res_b[0]
-			part_s_wei = res_b[1]
-			edge_cut = res_b[2]
-
-			sd['mlkp'] = tool.get_standard_deviation(part_s_wei.values())
-			traffic['mlkp'] = edge_cut
-			sd2['mlkp'] = sd['mlkp']/sd['random']
-			traffic2['mlkp'] = float(traffic['mlkp'])/traffic['random']
-
-			for pno in part_s_wei.keys():
-				output_load.write('mlkp\t%s\t%d\t%d\t%d\t%d\t%f\t%f\n'%(topo[k],pn,pno,part_s_num[pno],part_s_wei[pno],sd['mlkp'],sd2['mlkp']))
-
-			output_traffic.write('mlkp\t%s\t%d\t%d\t%f\t%s\n'%(topo[k],pn,traffic['mlkp'],traffic2['mlkp'],nn[k]))
-			print '-------------------------mlkp[%s-%d]-------------------------------\n'%(nn[k],pn)
-			print '各个分区的交换机权重总和'
-			for pno in part_s_wei.keys():
-				print '%2d '%part_s_wei[pno],
-			print ''
-			print '区域负载标准差：%f'%sd['mlkp']
-			print '区域负载标准差2：%f'%sd2['mlkp']
-			print '跨域流量（割边）数量：%d'%traffic['mlkp']
-			print '跨域流量（割边）数量2：%f'%traffic2['mlkp']
-			
-			#mlkp end
-			
-
-			#是否打印在控制台上
-			if False:
-			#if True:
-				print '-------------------------[%s-%d]-------------------------------\n'%(nn[k],pn)
-				print '各个分区交换机数量'
-				for pno in part_s_num.keys():
-					print '%2d '%part_s_num[pno],
-				print ''
-				print '各个分区的交换机权重总和'
-				for pno in part_s_wei.keys():
-					print '%2d '%part_s_wei[pno],
-				print ''
-				print '跨域流量（割边）数量：%d'%edge_cut
-
-				print '交换机分区情况'
-				for i in xrange(len(part)):
-					print '%2d '%part[i],
-				print ''
-				print '控制器放置位置'
-				for pno in ctr_place.keys():
-					print '%2d '%(pno),
-				print ''
-				for pno in ctr_place.keys():
-					print '%2d '%ctr_place[pno],
-				print ''
-				print '各个分区花费代价'
-				for pno in part_cost.keys():
-					print '%2d '%part_cost[pno],
-				print ''
-	
-	
+		output_traffic.write('%s\t%s\t%d\t%d\t%f\t%s\n'%(alg_name, topo_name, pn, inter_traffic, inter_traffic_2, res.network.sn))
+		print '-------------------------%s[%s-%d]-------------------------------\n'%(alg_name, topo_name, pn)
+		print '各个分区的交换机权重总和'
+		for pno in part_load.keys():
+			print '%2d '%part_load[pno],
+		print ''
+		print '区域负载标准差：%f'%load_sd
+		print '区域负载标准差2：%f'%load_sd_2
+		print '跨域流量（割边）数量：%d'%inter_traffic
+		print '跨域流量（割边）数量2：%f'%inter_traffic_2

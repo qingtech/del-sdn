@@ -9,7 +9,16 @@ from tool import get_s_wei_2,get_child_network,get_res
 
 class MlkpAlg(Algorithm):
 	
-	def run(self,):
+	def run(self, network, level, pn=None,):
+
+		super(MlkpAlg, self).run(network, level, pn)
+
+		assert network
+		assert level
+		assert level > 0
+		
+		self.level = level
+		self.pn = 2**level
 
 		return self.switch_partition_and_controller_deployment()
 
@@ -63,9 +72,9 @@ class MlkpAlg(Algorithm):
 		#输入
 		sn = self.network.sn
 		pn = self.pn
-		s_wei = network.s_wei
-		l_wei = network.l_wei
-		path_cost = network.path_cost
+		s_wei = self.network.s_wei
+		l_wei = self.network.l_wei
+		path_cost = self.network.path_cost
 
 		#划分算法开始
 		#1.粗化
@@ -115,7 +124,7 @@ class MlkpAlg(Algorithm):
 		part_s_num = tmp_res[0]
 		part_s_wei = tmp_res[1]
 		inter_traffic = tmp_res[2]
-		res = Result(self.network, self, partition, ctr_place, part_cost, part_s_num, part_s_wei, inter_traffic)
+		res = Result(self.network, self, pn, partition, ctr_place, part_cost, part_s_num, part_s_wei, inter_traffic)
 
 		return res
 
@@ -277,31 +286,16 @@ class MlkpAlg(Algorithm):
 if __name__=='__main__':
 
 	#输入
+	#拓扑
 	topo_file_name_list = ['33sw.txt','50sw.txt','100sw.txt']
-	topo_name = ['33sw','50sw','100sw']
-	topo_count = len(topo_file_name_list)
 	flow_file_name_list = ['235sw_flow.txt','246sw_flow.txt','300sw_flow.txt']
-	alg_name_dict = {}
-	alg_name_dict['mlkp'] = 'mlkp'
-
 	
-	#输出
-
-	load_file_name = 'load.txt'
-	traffic_file_name = 'traffic.txt'
-	output_load = open(load_file_name,'w')
-	output_load.write('algs\ttopo\tkway\tpart\tscount\tload\tsd\tsd2\n')
-	output_traffic = open(traffic_file_name,'w')
-	output_traffic.write('algs\ttopo\tkway\ttraffic\ttraffic2\tflow\n')
-
-
+	net_dict = {}	
 	for topo_file_name in topo_file_name_list:
-		#设置输入：网络拓扑,流矩阵,分区层数
 
-		####################
 		network = Network(topo_file_name)
+		net_dict[network.name] = network
 
-		###################
 		s_wei = network.s_wei
 		l_wei = network.l_wei
 		'''
@@ -318,47 +312,85 @@ if __name__=='__main__':
 		'''
 
 
+	#算法
+	alg_dict = {}
+	alg = MlkpAlg('mlkp',)
+	alg_dict['mlkp'] = alg
+	
+	#输出
 
-		#算法开始
+	res_list = []
+
+
+	for network in net_dict.values():
+		for level in xrange(1,6):
+
+			pn = 2**level #区域数目
+			for alg in alg_dict.values():
+
+				res = alg.run(network, level, pn)
+				res_list.append(res)
+
+
+	#set load_sd_2, inter_traffic_2
+	res_dict = {}
+	for res in res_list:
+		topo_name = res.network.name
+		pn = res.pn
+		alg_name = res.algorithm.name
+		if not res_dict.get(topo_name, None):
+			res_dict[topo_name] = {}
+		if not res_dict[topo_name].get(pn, None):
+			res_dict[topo_name][pn] = {}
+		res_dict[topo_name][pn][alg_name] = res
+
+	base_alg_name = 'mlkp'
+	for network in net_dict.values():
+		topo_name = network.name
 		for level in xrange(1,6):
 			pn = 2**level #区域数目
-			sd = {}
-			traffic = {}
-			sd2 = {}
-			traffic2 = {}
-			
-			
-			#mlkp begin
-			alg_name = alg_name_dict['mlkp']
-			alg = MlkpAlg(alg_name, network, level, pn)
-			res = alg.run()
+			base_res = res_dict[topo_name][pn][base_alg_name]
+			for alg in alg_dict.values():
+				alg_name = alg.name
+				res = res_dict[topo_name][pn][alg_name]
+				res.load_sd_2 = float(res.load_sd)/float(base_res.load_sd)
+				res.inter_traffic_2 = float(res.inter_traffic)/float(base_res.inter_traffic)
+				
 
-			part = res.partition
-			ctr_place = res.ctr_place
-			part_cost = res.part_cost
-			part_s_num = res.part_s_num
-			part_s_wei = res.part_s_wei
-			inter_traffic = res.inter_traffic
+	#output
+	load_file_name = 'load.txt'
+	traffic_file_name = 'traffic.txt'
+	output_load = open(load_file_name,'w')
+	output_load.write('algs\ttopo\tkway\tpart\tscount\tload\tsd\tsd2\n')
+	output_traffic = open(traffic_file_name,'w')
+	output_traffic.write('algs\ttopo\tkway\ttraffic\ttraffic2\tflow\n')
+	for res in res_list:
 
-			alg_name = res.algorithm.name
-			topo_name = res.network.name
-			
-			sd[alg_name] = tool.get_standard_deviation(part_s_wei.values())
-			traffic[alg_name] = inter_traffic
-			sd2[alg_name] = sd[alg_name]/sd[alg_name]
-			traffic2[alg_name] = float(traffic[alg_name])/traffic[alg_name]
+		part = res.partition
+		ctr_place = res.ctr_place
+		part_cost = res.part_cost
+		part_sn = res.part_sn
+		part_load = res.part_load
+		load_sd = res.load_sd
+		load_sd_2 = res.load_sd_2
+		inter_traffic = res.inter_traffic
+		inter_traffic_2 = res.inter_traffic_2
 
-			for pno in part_s_wei.keys():
-				output_load.write('%s\t%s\t%d\t%d\t%d\t%d\t%f\t%f\n'%(alg_name, topo_name, pn, pno, part_s_num[pno], part_s_wei[pno],sd[alg_name],sd2[alg_name]))
+		topo_name = res.network.name
+		pn = res.pn
+		alg_name = res.algorithm.name
+		
 
-			output_traffic.write('%s\t%s\t%d\t%d\t%f\t%s\n'%(alg_name, topo_name, pn, traffic[alg_name], traffic2[alg_name], network.sn))
-			print '-------------------------%s[%s-%d]-------------------------------\n'%(alg_name, network.sn, pn)
-			print '各个分区的交换机权重总和'
-			for pno in part_s_wei.keys():
-				print '%2d '%part_s_wei[pno],
-			print ''
-			print '区域负载标准差：%f'%sd[alg_name]
-			print '区域负载标准差2：%f'%sd2[alg_name]
-			print '跨域流量（割边）数量：%d'%traffic[alg_name]
-			print '跨域流量（割边）数量2：%f'%traffic2[alg_name]
-			#mlkp end
+		for pno in part_load.keys():
+			output_load.write('%s\t%s\t%d\t%d\t%d\t%d\t%f\t%f\n'%(alg_name, topo_name, pn, pno, part_sn[pno], part_load[pno],load_sd,load_sd_2))
+
+		output_traffic.write('%s\t%s\t%d\t%d\t%f\t%s\n'%(alg_name, topo_name, pn, inter_traffic, inter_traffic_2, res.network.sn))
+		print '-------------------------%s[%s-%d]-------------------------------\n'%(alg_name, topo_name, pn)
+		print '各个分区的交换机权重总和'
+		for pno in part_load.keys():
+			print '%2d '%part_load[pno],
+		print ''
+		print '区域负载标准差：%f'%load_sd
+		print '区域负载标准差2：%f'%load_sd_2
+		print '跨域流量（割边）数量：%d'%inter_traffic
+		print '跨域流量（割边）数量2：%f'%inter_traffic_2
