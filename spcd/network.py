@@ -5,14 +5,13 @@ import random
 
 class Network(object):
 
-	def __init__(self, topo, flow = None, name = None):
+	def __init__(self, topo, flow = None):
 		assert topo
 		self.INF = sys.maxint/4 #表示交换机间不可达或者之间不存在链路
 
-		self.name = name
-		
 		#set topo
 		#self.topo	#网络拓扑
+		#self.name	#网络名称
 		#self.sn	#交换机(节点)数目
 		#self.ln	#链路数目
 		#self.l_dist	#链路的距离
@@ -50,14 +49,18 @@ class Network(object):
 		#load network topology:
 		
 		f = open(topo_file_name)
+
+		#read topo name
 		line = f.readline()
-		
 		assert line
-
 		line = line.strip('\n')
+		self.name = line
 
+		#read switch number
+		line = f.readline()
+		assert line
+		line = line.strip('\n')
 		assert line.isdigit()
-
 		sn = int(line);
 
 		topo = [[0 for col in range(sn)] for row in range(sn)]

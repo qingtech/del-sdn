@@ -2,7 +2,6 @@
 import os
 import time
 import copy
-import gv
 import mlkp_alg
 import random_alg
 import greedy_alg
@@ -13,9 +12,9 @@ if __name__=='__main__':
 
 	#输入
 	#拓扑
-	#topo_file_name_list = ['235sw.txt','274sw.txt','349sw.txt']
+	topo_file_name_list = ['235sw.txt','274sw.txt','349sw.txt']
 	#topo_file_name_list = ['33sw.txt','50sw.txt','100sw.txt']
-	topo_file_name_list = ['33sw.txt',]
+	#topo_file_name_list = ['33sw.txt',]
 	flow_file_name_list = ['235sw_flow.txt','246sw_flow.txt','300sw_flow.txt']
 	
 	net_dict = {}	
@@ -64,6 +63,19 @@ if __name__=='__main__':
 				res = alg.run(network, level, pn)
 				res_list.append(res)
 
+				topo_name = res.network.name
+				pn = res.pn
+				alg_name = res.algorithm.name
+				print '-------------------------%s[%s-%d]-------------------------------\n'%(alg_name, topo_name, pn)
+				print '各个分区的交换机权重总和'
+				for pno in res.part_load.keys():
+					print '%2d '%res.part_load[pno],
+				print ''
+				print '区域负载标准差：%f'%res.load_sd
+				#print '区域负载标准差2：%f'%load_sd_2
+				print '跨域流量（割边）数量：%d'%res.inter_traffic
+				#print '跨域流量（割边）数量2：%f'%inter_traffic_2
+
 
 	#set load_sd_2, inter_traffic_2
 	res_dict = {}
@@ -87,6 +99,21 @@ if __name__=='__main__':
 				res = res_dict[topo_name][pn][alg_name]
 				res.load_sd_2 = float(res.load_sd)/float(base_res.load_sd)
 				res.inter_traffic_2 = float(res.inter_traffic)/float(base_res.inter_traffic)
+
+
+				
+				topo_name = res.network.name
+				pn = res.pn
+				alg_name = res.algorithm.name
+				print '-------------------------%s[%s-%d]-------------------------------\n'%(alg_name, topo_name, pn)
+				print '各个分区的交换机权重总和'
+				for pno in res.part_load.keys():
+					print '%2d '%res.part_load[pno],
+				print ''
+				print '区域负载标准差：%f'%res.load_sd
+				print '区域负载标准差2：%f'%res.load_sd_2
+				print '跨域流量（割边）数量：%d'%res.inter_traffic
+				print '跨域流量（割边）数量2：%f'%res.inter_traffic_2
 				
 
 	#输出
@@ -110,19 +137,29 @@ if __name__=='__main__':
 		pn = res.pn
 		alg_name = res.algorithm.name
 		
-		assert load_sd
-		assert load_sd_2
 
 		for pno in part_load.keys():
 			output_load.write('%s\t%s\t%d\t%d\t%d\t%d\t%f\t%f\n'%(alg_name, topo_name, pn, pno, part_sn[pno], part_load[pno],load_sd,load_sd_2))
 
 		output_traffic.write('%s\t%s\t%d\t%d\t%f\t%s\n'%(alg_name, topo_name, pn, inter_traffic, inter_traffic_2, res.network.sn))
-		print '-------------------------%s[%s-%d]-------------------------------\n'%(alg_name, topo_name, pn)
-		print '各个分区的交换机权重总和'
-		for pno in part_load.keys():
-			print '%2d '%part_load[pno],
-		print ''
-		print '区域负载标准差：%f'%load_sd
-		print '区域负载标准差2：%f'%load_sd_2
-		print '跨域流量（割边）数量：%d'%inter_traffic
-		print '跨域流量（割边）数量2：%f'%inter_traffic_2
+	#输出mlkp算法效果：平均sd_2,最大sd_2,平均inter_traffic_2,最大inter_traffic_2
+	mean_load_sd_2 = 0
+	max_load_sd_2 = 0
+	mean_inter_traffic_2 = 0
+	max_inter_traffic_2 = 0
+	log_file_name = 'log.txt'
+	output_log = open(log_file_name,'w')
+	count = 0
+	for res in res_list:
+		if res.algorithm.name == 'mlkp':
+			count += 1
+			mean_load_sd_2 += res.load_sd_2
+			mean_inter_traffic_2 += res.inter_traffic_2
+			if max_load_sd_2 < res.load_sd_2:
+				max_load_sd_2 = res.load_sd_2
+			if max_inter_traffic_2 < res.inter_traffic_2:
+				max_inter_traffic_2 = res.inter_traffic_2
+	mean_load_sd_2 = float(mean_load_sd_2)/count	
+	mean_inter_traffic_2 = float(mean_inter_traffic_2)/count
+	
+	output_log.write('%f\t%f\t%f\t%f\n'%(mean_load_sd_2, max_load_sd_2, mean_inter_traffic_2, max_inter_traffic_2))

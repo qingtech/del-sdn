@@ -34,6 +34,7 @@ python main.py
 echo 'copy load.txt traffic.txt to directory Rscript'
 cp load.txt Rscript
 cp traffic.txt Rscript
+cp log.txt Rscript
 #sleep 5
 cd Rscript
 echo 'start to run R script'
@@ -42,6 +43,9 @@ Rscript load2.R
 Rscript traffic.R
 rm Rplots.pdf
 dname=$(date +%Y%m%d-%H%M%S)
+echo 'log to logs.txt'
+echo $dname >> result.log
+cat log.txt >> result.log
 echo 'move result to directory '$dname
 mkdir $dname
 mv *.txt *.pdf $dname
