@@ -55,6 +55,8 @@ class Network(object):
 		assert line
 		line = line.strip('\n')
 		self.name = line
+		#for set self.name = topo_xx_switches_xx_links
+		self.name = None
 
 		#read switch number
 		line = f.readline()
@@ -99,7 +101,7 @@ class Network(object):
 		#设置名称
 		name = self.name
 		if not name:
-			name = 'topo_%dsw_%dlk'%(sn,ln)
+			name = 'topo_%d_switches_%d_links'%(sn,ln)
 
 		self.sn = sn
 		self.ln = ln

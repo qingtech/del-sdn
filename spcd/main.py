@@ -41,14 +41,14 @@ if __name__=='__main__':
 
 	#算法
 	alg_dict = {}
-	alg = random_alg.RandomAlg('random',)
-	alg_dict['random'] = alg
-	alg = greedy_alg.GreedyAlg('greedy',)
-	alg_dict['greedy'] = alg
-	alg = mlkp_alg.MlkpAlg('mlkp',)
-	alg_dict['mlkp'] = alg
+	alg = random_alg.RandomAlg('RANDOM',)
+	alg_dict['RANDOM'] = alg
+	alg = greedy_alg.GreedyAlg('DCP-GK',)
+	alg_dict['DCP-GK'] = alg
+	alg = mlkp_alg.MlkpAlg('MLkP',)
+	alg_dict['MLkP'] = alg
 
-	base_alg_name = 'random'
+	base_alg_name = 'RANDOM'
 
 	#结果
 
@@ -66,6 +66,7 @@ if __name__=='__main__':
 				topo_name = res.network.name
 				pn = res.pn
 				alg_name = res.algorithm.name
+				'''
 				print '-------------------------%s[%s-%d]-------------------------------\n'%(alg_name, topo_name, pn)
 				print '各个分区的交换机权重总和'
 				for pno in res.part_load.keys():
@@ -75,6 +76,7 @@ if __name__=='__main__':
 				#print '区域负载标准差2：%f'%load_sd_2
 				print '跨域流量（割边）数量：%d'%res.inter_traffic
 				#print '跨域流量（割边）数量2：%f'%inter_traffic_2
+				'''
 
 
 	#set load_sd_2, inter_traffic_2
@@ -151,7 +153,7 @@ if __name__=='__main__':
 	output_log = open(log_file_name,'w')
 	count = 0
 	for res in res_list:
-		if res.algorithm.name == 'mlkp':
+		if res.algorithm.name == 'MLkP':
 			count += 1
 			mean_load_sd_2 += res.load_sd_2
 			mean_inter_traffic_2 += res.inter_traffic_2
