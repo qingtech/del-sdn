@@ -12,11 +12,11 @@ require(ggplot2)
 traffic$kway = factor(traffic$kway)
 ############################################
 qplot(kway,traffic, data=traffic, fill=algs, facets = topo ~ .,
-      xlab='k-way', ylab='inter-domain traffic',
+      xlab='number of domain', ylab='inter-domain traffic',
       geom='bar', position='dodge', stat='identity',)
 ggsave('inter_domain_traffic.pdf')
 qplot(kway,traffic2, data=traffic, fill=algs, facets = topo ~ .,
-      xlab='k-way', ylab='inter-domain traffic',
+      xlab='number of domain', ylab='inter-domain traffic',
       geom='bar', position='dodge', stat='identity',)
 ggsave('inter_domain_traffic2.pdf')
 
