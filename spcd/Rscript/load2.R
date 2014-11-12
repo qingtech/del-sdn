@@ -12,11 +12,11 @@ require(ggplot2)
 load$kway = factor(load$kway)
 ############################################
 qplot(kway,sd, data=load, fill=algs, facets = topo ~ .,
-      xlab='number of domain', ylab='standard deviation of domain load',
+      xlab='number of domain', ylab='standard deviation of domain loads',
       geom='bar', position='dodge', stat='identity',)
 ggsave('standard_deviation_of_domain_load1.pdf')
 qplot(kway,sd2, data=load, fill=algs, facets = topo ~ .,
-      xlab='number of domain', ylab='standard deviation of domain load',
+      xlab='number of domain', ylab='standard deviation of domain loads',
       geom='bar', position='dodge', stat='identity',)
 ggsave('standard_deviation_of_domain_load2.pdf')
 

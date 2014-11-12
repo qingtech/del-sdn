@@ -32,7 +32,7 @@ require(ggplot2)
 std$kway = factor(std$kway)
 ############################################
 qplot(kway,std, data=std, fill=algs, facets = topo ~ .,
-      xlab='number of domain', ylab='standard deviation of domain load',
+      xlab='number of domain', ylab='standard deviation of domain loads',
       geom='bar', position='dodge', stat='identity',)
 ggsave('standard_deviation_of_domain_load.pdf')
 
